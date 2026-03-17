@@ -7,21 +7,21 @@ export default function CustomerMenu() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  // Use the table number from URL (e.g., ?table=1)
+  // Use the table number from URL 
   const tableNumber = searchParams.get("table") || "1";
 
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
-    // 1. Always save the table number to localStorage immediately
+    // Always save the table number to localStorage immediately
     localStorage.setItem("table", tableNumber);
 
-    // 2. Load existing cart from localStorage so items don't disappear on refresh
+    // Load existing cart from localStorage so items don't disappear on refresh
     const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
     setCart(savedCart);
 
-    // 3. Fetch Menu from Django
+    // Fetch Menu from Django
     fetch(`${BASE_URL}/api/menu/`)
       .then(res => res.json())
       .then(data => setMenu(data))
@@ -43,7 +43,7 @@ export default function CustomerMenu() {
     }
 
     setCart(updatedCart);
-    // 4. Save to localStorage every time the cart changes
+    //  Save to localStorage every time the cart changes
     localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 

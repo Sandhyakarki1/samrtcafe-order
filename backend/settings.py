@@ -8,13 +8,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==================================================
 SECRET_KEY = 'django-insecure-l6g6c(axm1g)m3gh0og2&$^szov!)b$w+4p35ajejmeqiksm19'
 DEBUG = True
-ALLOWED_HOSTS = ['*'] # Allows connection from your Mac browser
+ALLOWED_HOSTS = ['*'] 
 
 # ==================================================
 # INSTALLED APPS
 # ==================================================
 INSTALLED_APPS = [
-    # Django Built-in
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -26,15 +25,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    # Your SmartCafe App
+    #  SmartCafe App
     'admin_panel',
 ]
 
 # ==================================================
-# MIDDLEWARE (Order is critical!)
+# MIDDLEWARE
 # ==================================================
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # ✅ MUST BE FIRST
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -65,52 +64,59 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 # ==================================================
-# DATABASE (Updated to use your smart_cafe.db)
+# DATABASE
 # ==================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'smart_cafe.db', # ✅ This connects to your 7 orders
+        'NAME': BASE_DIR / 'smart_cafe.db', 
     }
 }
 
 # ==================================================
-# DRF SETTINGS (Allows React to fetch data)
+# DRF SETTINGS
 # ==================================================
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny', # ✅ Fixes your fetch error
+        'rest_framework.permissions.AllowAny', 
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication', # Added for simpler admin testing
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
 
 # ==================================================
-# CORS (Fixes Login and Connection errors)
+# CORS
 # ==================================================
 CORS_ALLOW_ALL_ORIGINS = True 
 
 # ==================================================
-# MEDIA FILES (For Menu Images)
+# STATIC & MEDIA FILES (For Menu Images)
 # ==================================================
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ==================================================
 # EMAIL SETTINGS (For OTP Feature)
 # ==================================================
-# This prints the OTP in your VS Code terminal
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'admin@smartcafe.com'
 
 # ==================================================
-# INTERNATIONALIZATION
+# INTERNATIONALIZATION (UPDATED TO NEPAL TIME)
 # ==================================================
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+
+#  Set to Nepal Timezone
+TIME_ZONE = 'Asia/Kathmandu'
+
 USE_I18N = True
+
+# Enables Django to use the timezone set above
 USE_TZ = True
 
-STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

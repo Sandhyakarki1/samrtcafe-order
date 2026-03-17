@@ -8,17 +8,17 @@ const Orders = () => {
   const [tableNumber, setTableNumber] = useState("");
   const [cart, setCart] = useState([]);
 
-  // This runs every time you open the page
+  // This runs every time  open the page
   useEffect(() => {
     refreshData();
   }, []);
 
   const refreshData = async () => {
     try {
-      // 1. Fetching the "Stored" orders from Django
+      // Fetching the "Stored" orders from Django
       const orderRes = await fetch("http://127.0.0.1:8000/api/orders/");
       const orderData = await orderRes.json();
-      setOrders(orderData); // This updates your screen with backend data
+      setOrders(orderData); // This updates screen with backend data
 
       // 2. Fetching latest Menu (to check stock)
       const menuRes = await fetch("http://127.0.0.1:8000/api/menu/");
@@ -60,7 +60,7 @@ const Orders = () => {
       setIsModalOpen(false);
       setCart([]);
       setTableNumber("");
-      refreshData(); // 🔥 IMPORTANT: This tells React to go get the new data from Django
+      refreshData(); 
     }
   };
 
@@ -69,7 +69,7 @@ const Orders = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Live Orders</h1>
-          <p className="text-gray-500 text-sm">Showing data synced from Django Database</p>
+          <p className="text-gray-500 text-sm">Showing data from Django Database</p>
         </div>
         <button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-indigo-100 transition-transform active:scale-95">
           <Plus size={20} /> Take New Order
@@ -99,7 +99,7 @@ const Orders = () => {
 
             {/* HERE IS THE QUANTITY DATA STORED FROM BACKEND */}
             <div className="bg-slate-50 rounded-2xl p-4 mb-6">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Items Summary</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">     </p>
               <p className="text-sm text-slate-700 font-bold leading-relaxed text-center italic">
                 {order.items_text || "No items recorded"}
               </p>

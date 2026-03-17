@@ -1,113 +1,85 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom'; 
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'; 
 import { 
   LayoutDashboard, 
   Users, 
-  UtensilsCrossed, // Used for Menu
-  ClipboardList,   // Used for Orders
-  MessageSquare,   // Used for Feedback
-  QrCode           // Used for QR Code
+  UtensilsCrossed, 
+  ClipboardList,   
+  MessageSquare,   
+  QrCode,
+  LogOut
 } from 'lucide-react';
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
+
+  // 1. Centralized Menu Items Array
+  const menuItems = [
+    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: 'Staff', path: '/admin/staff', icon: <Users size={20} /> },
+    { name: 'Menu', path: '/admin/menu', icon: <UtensilsCrossed size={20} /> },
+    { name: 'Orders', path: '/admin/orders', icon: <ClipboardList size={20} /> },
+    { name: 'Feedback', path: '/admin/feedback', icon: <MessageSquare size={20} /> },
+    { name: 'QR Code', path: '/admin/qrcode', icon: <QrCode size={20} /> },
+  ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_user"); // Clear login session
+    navigate("/admin/login");
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
       {/* SIDEBAR */}
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col z-30 shadow-xl">
-        <div className="p-6">
+        {/* Brand Header */}
+        <div className="p-6 border-b border-slate-800">
           <h2 className="text-xl font-bold tracking-tight">Smart-cafe</h2>
           <div className="mt-1">
-            <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-bold">
-              Admin
+            <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-black tracking-widest">
+              Admin Portal
             </span>
           </div>
         </div>
 
-        <nav className="flex-1 px-3 mt-4 space-y-2">
-          {/* DASHBOARD LINK */}
-          <NavLink
-            to="/admin/dashboard"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <LayoutDashboard size={20} />
-            <span className="font-medium text-sm">Dashboard</span>
-          </NavLink>
-
-          {/* STAFF LINK */}
-          <NavLink
-            to="/admin/staff"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <Users size={20} />
-            <span className="font-medium text-sm">Staff</span>
-          </NavLink>
-
-          {/* MENU MANAGEMENT LINK - Added this! */}
-          <NavLink
-            to="/admin/menu"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <UtensilsCrossed size={20} />
-            <span className="font-medium text-sm">Menu</span>
-          </NavLink>
-
-          {/* ORDERS LINK (For later) */}
-          <NavLink
-            to="/admin/orders"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <ClipboardList size={20} />
-            <span className="font-medium text-sm">Orders</span>
-          </NavLink>
-
-          {/* FEEDBACK LINK (For later) */}
-          <NavLink
-            to="/admin/feedback"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <MessageSquare size={20} />
-            <span className="font-medium text-sm">Feedback</span>
-          </NavLink>
-
-          {/* QR CODE LINK (For later) */}
-          <NavLink
-            to="/admin/qrcode"
-            className={({ isActive }) => 
-              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                isActive ? 'bg-[#22c55e] text-white shadow-lg' : 'text-gray-400 hover:bg-slate-800 hover:text-white'
-              }`
-            }
-          >
-            <QrCode size={20} />
-            <span className="font-medium text-sm">QR Code</span>
-          </NavLink>
+        {/* Dynamic Navigation Links */}
+        <nav className="flex-1 px-3 mt-6 space-y-1">
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={({ isActive }) => 
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  isActive 
+                    ? 'bg-[#22c55e] text-white shadow-lg shadow-green-900/20' 
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`
+              }
+            >
+              <span className="transition-transform group-hover:scale-110">
+                {item.icon}
+              </span>
+              <span className="font-semibold text-sm">{item.name}</span>
+            </NavLink>
+          ))}
         </nav>
+
+        {/* Logout Section */}
+        <div className="p-4 border-t border-slate-800">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all font-bold text-sm"
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto p-8 bg-gray-50 custom-scrollbar">
-        {/* Your MenuManagement.jsx or StaffManagement.jsx will render here */}
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
         <div className="max-w-7xl mx-auto">
+          {/* Dashboard, Staff, Menu, Orders, or Feedback will render here */}
           <Outlet /> 
         </div>
       </main>

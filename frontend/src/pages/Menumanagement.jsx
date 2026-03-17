@@ -53,7 +53,7 @@ const MenuManagement = () => {
     try {
       const res = await fetch(url, {
         method: method,
-        // Note: Do NOT set 'Content-Type' header when using FormData
+        // Do NOT set 'Content-Type' header when using FormData
         body: data,
       });
 
@@ -164,7 +164,7 @@ const MenuManagement = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase ml-1">Food Name</label>
-                <input required className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder="e.g. Veg Burger" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <input required className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -178,13 +178,13 @@ const MenuManagement = () => {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-gray-400 uppercase ml-1">Price (Rs)</label>
-                  <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder="0.00" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                 </div>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase ml-1">Available Quantity (Stock)</label>
-                <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder="e.g. 50" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
               </div>
 
               <div>

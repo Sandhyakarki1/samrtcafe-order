@@ -17,7 +17,7 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
-# Signal to auto-create Profile
+# Signal to auto create Profile
 @receiver(post_save, sender=User)
 def manage_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -26,7 +26,7 @@ def manage_user_profile(sender, instance, created, **kwargs):
         instance.profile.save()
 
 
-# 2. MENU ITEM MODEL
+# MENU ITEM MODEL
 class MenuItem(models.Model):
     CATEGORY_CHOICES = (
         ('Meals', 'Meals'),
@@ -43,7 +43,7 @@ class MenuItem(models.Model):
         return self.name
 
 
-# 3. ORDER MODEL
+#  ORDER MODEL
 class Order(models.Model):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
@@ -61,15 +61,39 @@ class Order(models.Model):
         return f"Table {self.table_number} - {self.status}"
 
 
-# 4. ORDER ITEM MODEL
+# ORDER ITEM MODEL
 class OrderItem(models.Model):
     order = models.ForeignKey('Order', related_name='items', on_delete=models.CASCADE)
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # price at order time
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def save(self, *args, **kwargs):
+        #  Check if this is a NEW order item 
+        if not self.pk:
+            if self.menu_item.stock < self.quantity:
+                raise ValueError(f"Not enough {self.menu_item.name} in stock!")
+            
+            # Subtract from stock
+            self.menu_item.stock -= self.quantity
+            self.menu_item.save()
+            
+            # Automatically set the price from the menu if not provided
+            if not self.price:
+                self.price = self.menu_item.price
+                
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name}"
+   
 
-    def total_price(self):
-        return self.quantity * self.price
+#class Feedback(models.Model):
+    # Link to the order so you know which food/table gave the feedback
+    #order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='feedback')
+    #rating = models.IntegerField() # 1 to 5
+    #comment = models.TextField(blank=True, null=True)
+    #created_at = models.DateTimeField(auto_now_add=True)
+
+    #def __str__(self):
+     #   return f"Order #{self.order.id} - {self.rating} Stars"

@@ -18,7 +18,7 @@ const StaffManagement = () => {
       const response = await fetch(API_URL);
       if (response.ok) {
         const data = await response.json();
-        // Django returns 'username' and 'assigned_role' (from our serializer)
+    
         const formattedData = data.map(user => ({
           id: user.id,
           name: user.username,
@@ -40,7 +40,7 @@ const StaffManagement = () => {
 
   const handleEditClick = (staff) => {
     setEditingStaff(staff);
-    // When editing, we reset password to empty string
+    
     setFormData({ name: staff.name, email: staff.email, password: '', role: staff.role });
     setIsModalOpen(true);
   };
@@ -68,7 +68,6 @@ const StaffManagement = () => {
       role: formData.role
     };
 
-    // Only include password if it's not empty (important for editing)
     if (formData.password) {
       payload.password = formData.password;
     }
@@ -101,7 +100,7 @@ const StaffManagement = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Staff Management</h1>
-          <p className="text-gray-500 text-sm">Manage your team members and roles</p>
+          <p className="text-gray-500 text-sm">Manage team members and roles</p>
         </div>
         <button 
           onClick={handleAddClick} 

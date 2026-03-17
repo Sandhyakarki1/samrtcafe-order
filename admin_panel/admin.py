@@ -25,21 +25,17 @@ class CustomUserAdmin(BaseUserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
-# 2. Register the MenuItem model here
-# admin_panel/admin.py
-
+# Register the MenuItem model here
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    # 1. We change 'is_available' to 'stock_status' (a custom method defined below)
     list_display = ('name', 'category', 'price', 'stock', 'stock_status')
-    
-    # 2. list_filter MUST be a real field. Since 'is_available' isn't a field, 
+
     # we use 'category' and 'stock' or just 'category'.
     list_filter = ('category',) 
     
     search_fields = ('name',)
 
-    # 3. Create a custom method to show availability nicely in the admin
+    # Create a custom method to show availability nicely in the admin
     def stock_status(self, obj):
         if obj.stock > 0:
             return "✅ In Stock"
@@ -48,7 +44,7 @@ class MenuItemAdmin(admin.ModelAdmin):
     # This sets the column name in the admin
     stock_status.short_description = 'Availability'
 
-# This allows you to see the food items inside the order page
+# This allows  to see the food items inside the order page
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
