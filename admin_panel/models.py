@@ -34,6 +34,7 @@ class MenuItem(models.Model):
         ('Drinks', 'Drinks'),
     )
     name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True) 
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='menu_items/', null=True, blank=True)
@@ -67,6 +68,7 @@ class OrderItem(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    instructions = models.TextField(blank=True, null=True) 
 
     def save(self, *args, **kwargs):
         #  Check if this is a NEW order item 
@@ -88,12 +90,13 @@ class OrderItem(models.Model):
         return f"{self.quantity} x {self.menu_item.name}"
    
 
-#class Feedback(models.Model):
-    # Link to the order so you know which food/table gave the feedback
-    #order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='feedback')
-    #rating = models.IntegerField() # 1 to 5
-    #comment = models.TextField(blank=True, null=True)
-    #created_at = models.DateTimeField(auto_now_add=True)
 
-    #def __str__(self):
-     #   return f"Order #{self.order.id} - {self.rating} Stars"
+class Feedback(models.Model):
+    # Link to the order
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='feedback')
+    rating = models.IntegerField(default=5)
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.order.id} - {self.rating} Stars"
