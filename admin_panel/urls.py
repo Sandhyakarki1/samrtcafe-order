@@ -4,7 +4,8 @@ from .views import (
     admin_forgot_password, admin_reset_password, admin_dashboard_stats,
     StaffManagementView, StaffDetailView,
     MenuManagementView, MenuItemDetailView,
-    OrderListView, OrderDetailView, PlaceOrderView,   
+    OrderListView, OrderDetailView, PlaceOrderView, FeedbackView,
+
 )
 
 urlpatterns = [
@@ -28,5 +29,7 @@ urlpatterns = [
     path('orders/<int:pk>/', OrderDetailView.as_view(), name='order_detail'),
     path('place-order/', PlaceOrderView.as_view(), name='place_order'),
     
+    #Feedback management
+path('feedback/', FeedbackView.as_view(), name='feedback_api'),
    
 ]
