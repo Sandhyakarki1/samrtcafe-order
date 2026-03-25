@@ -2,7 +2,6 @@ import random
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -14,9 +13,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 
 # Models and Serializers
-# ✅ FIXED: Removed 'Feedback' and 'FeedbackSerializer' from these imports
-from .models import Profile, Order, OrderItem, MenuItem
-from .serializers import UserSerializer, MenuItemSerializer, OrderSerializer
+from .models import Feedback, Profile, Order, OrderItem, MenuItem
+from .serializers import FeedbackSerializer, UserSerializer, MenuItemSerializer, OrderSerializer
 
 
 # ==================================================
@@ -25,7 +23,6 @@ from .serializers import UserSerializer, MenuItemSerializer, OrderSerializer
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def admin_dashboard_stats(request):
-    """ Returns counts for the dashboard overview cards """
     total_orders = Order.objects.count()
     pending_orders = Order.objects.filter(status='Pending').count()
     total_menu = MenuItem.objects.count()
@@ -87,9 +84,7 @@ def admin_forgot_password(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_reset_password(request):
-    email = request.data.get("email")
-    otp = request.data.get("otp")
-    password = request.data.get("password")
+    email, otp, password = request.data.get("email"), request.data.get("otp"), request.data.get("password")
     user = get_object_or_404(User, email=email)
     if str(user.profile.otp) == str(otp):
         user.set_password(password)
@@ -130,7 +125,7 @@ class StaffDetailView(APIView):
 class MenuManagementView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        items = MenuItem.objects.all()
+        items = MenuItem.objects.all().order_by('category')
         return Response(MenuItemSerializer(items, many=True).data)
     def post(self, request):
         serializer = MenuItemSerializer(data=request.data)
@@ -153,7 +148,7 @@ class MenuItemDetailView(APIView):
         return Response(status=204)
 
 # ==================================================
-# ORDER LOGIC
+# ORDER LOGIC - ✅ FIXED NOTE BUGS HERE
 # ==================================================
 class PlaceOrderView(APIView):
     permission_classes = [AllowAny]
@@ -168,24 +163,35 @@ class PlaceOrderView(APIView):
                     menu_item = MenuItem.objects.get(id=item_data['id'])
                     qty = int(item_data['qty'])
 
+                    # ✅ THE FIX: Capture the 'instructions' from the cart
+                    note = item_data.get('instructions', "") 
+
+                    # Stock is reduced automatically via OrderItem.save() logic in models.py
                     OrderItem.objects.create(
                         order=order, 
                         menu_item=menu_item, 
-                        quantity=qty,
-                        price=menu_item.price
+                        quantity=qty, 
+                        price=menu_item.price,  
+                        instructions=note # ✅ CORRECTED: Use 'note' variable
                     )
+                    
                     total += (menu_item.price * qty)
 
                 order.total_price = total
                 order.save()
-                return Response({"message": "Order placed!", "id": order.id, "order_id": order.id}, status=201)
+                return Response({"message": "Order placed!", "order_id": order.id}, status=201)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
 class OrderListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        orders = Order.objects.all().order_by('-created_at')
+        # type=live shows active tables, type=history shows paid
+        order_type = request.query_params.get('type', 'live')
+        if order_type == 'history':
+            orders = Order.objects.filter(status='Paid').order_by('-created_at')
+        else:
+            orders = Order.objects.exclude(status='Paid').order_by('table_number')
         return Response(OrderSerializer(orders, many=True).data)
 
 class OrderDetailView(APIView):
@@ -204,6 +210,36 @@ class OrderDetailView(APIView):
         return Response({"error": "Status required"}, status=400)
     
     def delete(self, request, pk):
-        order = get_object_or_404(Order, pk=pk)
-        order.delete()
+        get_object_or_404(Order, pk=pk).delete()
         return Response(status=204)
+
+# ==================================================
+# FEEDBACK SYSTEM 
+# ==================================================
+class FeedbackView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        feedbacks = Feedback.objects.all().order_by('-created_at')
+        serializer = FeedbackSerializer(feedbacks, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        order_id = request.data.get('order_id')
+        rating = request.data.get('rating')
+        comment = request.data.get('comment')
+
+        if not order_id or not rating:
+            return Response({"error": "Order ID and Rating are required"}, status=400)
+
+        try:
+            order = Order.objects.get(id=order_id)
+            obj, created = Feedback.objects.get_or_create(
+                order=order,
+                defaults={'rating': rating, 'comment': comment}
+            )
+            if not created:
+                return Response({"error": "Feedback already exists"}, status=400)
+            return Response({"message": "Success"}, status=201)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
