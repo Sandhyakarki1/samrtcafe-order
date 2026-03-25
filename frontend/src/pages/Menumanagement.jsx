@@ -6,13 +6,13 @@ const MenuManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
-  // Updated state to include stock and image
   const [formData, setFormData] = useState({ 
     name: '', 
     category: 'Meals', 
     price: '', 
     stock: '', 
-    image: null 
+    image: null,
+    description: '' //  Added description to state
   });
   
   const API_URL = "http://127.0.0.1:8000/api/menu/";
@@ -35,14 +35,13 @@ const MenuManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // IMPORTANT: Use FormData for file uploads instead of JSON
     const data = new FormData();
     data.append('name', formData.name);
     data.append('category', formData.category);
     data.append('price', formData.price);
     data.append('stock', formData.stock);
+    data.append('description', formData.description); // ✅ Appending description
     
-    // Only append image if a new file was selected
     if (formData.image instanceof File) {
       data.append('image', formData.image);
     }
@@ -53,7 +52,6 @@ const MenuManagement = () => {
     try {
       const res = await fetch(url, {
         method: method,
-        // Do NOT set 'Content-Type' header when using FormData
         body: data,
       });
 
@@ -86,7 +84,7 @@ const MenuManagement = () => {
         <button 
           onClick={() => { 
             setEditingItem(null); 
-            setFormData({ name: '', category: 'Meals', price: '', stock: '', image: null }); 
+            setFormData({ name: '', category: 'Meals', price: '', stock: '', image: null, description: '' }); 
             setIsModalOpen(true); 
           }} 
           className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-semibold shadow-md hover:bg-indigo-700 transition-all"
@@ -111,7 +109,6 @@ const MenuManagement = () => {
               <tr key={item.id} className="hover:bg-indigo-50/30 transition-colors group">
                 <td className="px-8 py-5">
                   <div className="flex items-center gap-4">
-                    {/* Image Preview */}
                     <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-100 flex-shrink-0">
                       {item.image ? (
                         <img 
@@ -125,7 +122,10 @@ const MenuManagement = () => {
                         </div>
                       )}
                     </div>
-                    <span className="font-bold text-gray-700">{item.name}</span>
+                    <div>
+                        <span className="font-bold text-gray-700 block">{item.name}</span>
+                        <span className="text-[10px] text-gray-400 line-clamp-1 max-w-[200px]">{item.description}</span>
+                    </div>
                   </div>
                 </td>
                 <td className="px-8 py-5">
@@ -163,13 +163,24 @@ const MenuManagement = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1">Food Name</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Food Name</label>
                 <input required className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              </div>
+
+              {/* NEW DESCRIPTION TEXTAREA */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Food Description</label>
+                <textarea 
+                  className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1 text-sm h-20 resize-none" 
+                  placeholder="e.g. Spicy grilled chicken with herbs..." 
+                  value={formData.description} 
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">Category</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Category</label>
                   <select className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none bg-white mt-1" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     <option value="Meals">Meals</option>
                     <option value="Snacks">Snacks</option>
@@ -177,18 +188,18 @@ const MenuManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">Price (Rs)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Price (Rs)</label>
                   <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1">Available Quantity (Stock)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Available Quantity (Stock)</label>
                 <input required type="number" className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 flex items-center gap-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 flex items-center gap-2">
                    <ImageIcon size={14}/> Food Image
                 </label>
                 <input 
