@@ -1,13 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile
-from .models import MenuItem
-from .models import Order, OrderItem
+from .models import Profile, MenuItem, Order, OrderItem, Feedback
 
 class UserSerializer(serializers.ModelSerializer):
-    # 'role' is used for incoming data (POST/PUT)
     role = serializers.CharField(write_only=True, required=False)
-    # 'assigned_role' is used for outgoing data (GET) - matches  React fetch logic
     assigned_role = serializers.SerializerMethodField()
 
     class Meta:
@@ -18,50 +14,32 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def get_assigned_role(self, obj):
-        # Safely get the role from the profile
         return getattr(obj.profile, 'role', 'Waiter')
 
     def create(self, validated_data):
-        # Extract role and password
         role_data = validated_data.pop('role', 'Waiter')
         password = validated_data.pop('password')
-        
-        #  Create the User (This triggers the signal to create the Profile)
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
-        
-        #  Update the role in the profile 
-        # We use get_or_create just to be 100% safe
         profile, _ = Profile.objects.get_or_create(user=user)
         profile.role = role_data
         profile.save()
-        
         return user
 
     def update(self, instance, validated_data):
-        # Extract role and password if they exist
         role_data = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
-        
-        # Update standard User fields
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
-        
-        # Handle password update (if provided in the React edit form)
         if password:
             instance.set_password(password)
-        
         instance.save()
-        
-        # Update Profile role
         if role_data:
             profile, _ = Profile.objects.get_or_create(user=instance)
             profile.role = role_data
             profile.save()
-            
         return instance
-   
 
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,18 +47,13 @@ class MenuItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    # This pulls the food name 
     menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
-
     class Meta:
         model = OrderItem
-        
-        fields = ['id', 'menu_item', 'menu_item_name', 'quantity', 'price']
+        fields = ['id', 'menu_item', 'menu_item_name', 'quantity', 'price', 'instructions']
 
 class OrderSerializer(serializers.ModelSerializer):
-    
     items = OrderItemSerializer(many=True, read_only=True)
-    
     items_text = serializers.SerializerMethodField()
 
     class Meta:
@@ -88,7 +61,31 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'table_number', 'status', 'total_price', 'items', 'items_text', 'created_at']
 
     def get_items_text(self, obj):
-        # This loops through the items and makes a nice text string
         order_items = obj.items.all()
+        summary = []
+        for item in order_items:
+            text = f"{item.quantity}x {item.menu_item.name}"
+            if item.instructions:
+                text += f" ({item.instructions})" 
+            summary.append(text)
+        return ", ".join(summary)
+
         return ", ".join([f"{item.quantity}x {item.menu_item.name}" for item in order_items])
-   
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    table_number = serializers.ReadOnlyField(source='order.table_number')
+    items_summary = serializers.SerializerMethodField()
+    formatted_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'order', 'table_number', 'items_summary', 'rating', 'comment', 'formatted_date']
+
+    def get_formatted_date(self, obj):
+        # Format the date nicely for your MacBook browser display
+        return obj.created_at.strftime("%b %d, %I:%M %p")
+
+    def get_items_summary(self, obj):
+        # Retrieves the food items so the admin sees what was reviewed
+        items = obj.order.items.all()
+        return ", ".join([f"{i.quantity}x {i.menu_item.name}" for i in items])
