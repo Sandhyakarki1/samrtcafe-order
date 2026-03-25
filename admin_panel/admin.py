@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from .models import Profile, MenuItem 
 from .models import Profile
 from .models import Order, OrderItem
+from .models import Feedback 
+
 
 
 class ProfileInline(admin.StackedInline):
@@ -56,3 +58,11 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'table_number', 'status', 'total_price', 'created_at')
     
     inlines = [OrderItemInline]
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('id', 'get_table', 'rating', 'comment', 'created_at')
+    
+    def get_table(self, obj):
+        return obj.order.table_number
+    get_table.short_description = 'Table'
