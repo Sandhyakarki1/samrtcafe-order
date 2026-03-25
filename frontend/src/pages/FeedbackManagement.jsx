@@ -46,11 +46,11 @@ const FeedbackManagement = () => {
 
               <div className="flex justify-between items-center pt-6 border-t border-slate-50">
                  <div>
-                    {/* FIXED: Using table_number and order */}
+                    {/* Using table_number and order */}
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Table {f.table_number}</p>
                     <p className="text-xs font-bold text-slate-800">Order #{f.order}</p>
                  </div>
-                 {/* FIXED: Using formatted_date */}
+                 {/* Using formatted_date */}
                  <span className="text-[10px] font-bold text-slate-300 uppercase">{f.formatted_date}</span>
               </div>
             </div>
