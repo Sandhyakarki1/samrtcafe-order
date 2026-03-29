@@ -1,26 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard, MessageSquare, Plus, Minus } from "lucide-react";
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
 
 export default function CustomerCart() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // Get cart and table from storage
+  // 1. Initial Cart State
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
-  const table = localStorage.getItem("table") || "1"; // Default to Table 1 for testing
+  const table = localStorage.getItem("table") || "1";
+
+  // 2. Helper to sync with localStorage
+  const syncCart = (newCart) => {
+    setCart(newCart);
+    localStorage.setItem("cart", JSON.stringify(newCart));
+  };
+
+  // 3. Update Quantity Logic (The +/- buttons)
+  const updateQuantity = (id, delta) => {
+    const updated = cart.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(1, (item.quantity || 1) + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+    syncCart(updated);
+  };
+
+  // 4. Update Special Notes (SRS Requirement)
+  const updateNote = (id, note) => {
+    const updated = cart.map(item => item.id === id ? { ...item, note } : item);
+    syncCart(updated);
+  };
+
+  const removeItem = (id) => {
+    const updated = cart.filter(item => item.id !== id);
+    syncCart(updated);
+  };
 
   const total = cart.reduce(
     (sum, item) => sum + item.price * (item.quantity || 1),
     0 
   );
-
-  const clearCart = () => {
-    localStorage.removeItem("cart");
-    setCart([]);
-  };
 
   const placeOrder = async () => {
     if (cart.length === 0) return alert("Your cart is empty!");
@@ -30,7 +54,8 @@ export default function CustomerCart() {
       table_number: parseInt(table),
       items: cart.map(item => ({
         id: item.id,
-        qty: item.quantity || 1
+        qty: item.quantity || 1,
+        instructions: item.note || "" // ✅ Included notes for the Chef
       }))
     };
 
@@ -44,10 +69,9 @@ export default function CustomerCart() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Order sent to kitchen!");
         localStorage.removeItem("cart"); 
-        // Navigates to  tracking page with the specific order ID
-        navigate(`/track/${data.id}`); 
+        // Sync with your App.jsx tracking route
+        navigate(`/track/${data.order_id || data.id}`); 
       } else {
         alert("Order failed: " + (data.error || "Stock issue"));
       }
@@ -59,59 +83,85 @@ export default function CustomerCart() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#F8F9FB] p-6 font-sans">
+      <div className="max-w-xl mx-auto">
         
-        {/* Header */}
+        {/* Attractive Header */}
         <div className="flex items-center justify-between mb-8">
-          <Link to="/menu" className="p-2 bg-white rounded-full shadow-sm text-slate-400 hover:text-indigo-600 transition-colors">
+          <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 transition-all active:scale-90">
             <ArrowLeft size={24} />
-          </Link>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            <ShoppingBag className="text-indigo-600" /> Your Order
-          </h1>
-          <button onClick={clearCart} className="text-red-400 hover:text-red-600 transition-colors">
+          </button>
+          <h1 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Review Order</h1>
+          <button onClick={() => syncCart([])} className="p-3 text-red-400 hover:bg-red-50 rounded-2xl transition-all">
             <Trash2 size={20} />
           </button>
         </div>
 
-        {/* Table Number Indicator */}
-        <div className="bg-indigo-600 text-white p-4 rounded-2xl mb-6 flex justify-between items-center shadow-lg shadow-indigo-100">
-           <span className="font-bold uppercase text-xs tracking-widest opacity-80">Assigned Table</span>
-           <span className="text-2xl font-black italic">TABLE {table}</span>
+        {/* Highlighted Table Number */}
+        <div className="bg-slate-900 rounded-[32px] p-6 text-white mb-8 flex justify-between items-center shadow-xl shadow-slate-200">
+           <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-50 mb-1">Your Location</p>
+              <h2 className="text-3xl font-black italic">TABLE {table}</h2>
+           </div>
+           <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
+              <ShoppingBag size={28} />
+           </div>
         </div>
 
-        {/* Cart Items */}
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 mb-8">
+        {/* Dynamic Cart Items */}
+        <div className="space-y-4 mb-10">
           {cart.length === 0 ? (
-            <div className="text-center py-10">
-              <p className="text-slate-300 font-bold italic">Your cart is currently empty.</p>
-              <Link to="/menu" className="mt-4 inline-block text-indigo-600 font-black text-sm uppercase">Browse Menu</Link>
+            <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100">
+              <p className="text-slate-300 font-bold italic">No items picked yet.</p>
+              <Link to="/menu" className="mt-4 text-indigo-600 font-black text-xs uppercase tracking-widest border-b-2 border-indigo-600 pb-1">Open Menu</Link>
             </div>
           ) : (
-            <div className="space-y-6">
-              {cart.map(item => (
-                <div key={item.id} className="flex justify-between items-center pb-6 border-b border-slate-50 last:border-0 last:pb-0">
-                  <div>
-                    <h3 className="font-black text-slate-800">{item.name}</h3>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Quantity: {item.quantity}</p>
+            cart.map(item => (
+              <div key={item.id} className="bg-white rounded-[35px] p-5 shadow-sm border border-white flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100">
+                      <img src={`${BASE_URL}${item.image}`} className="w-full h-full object-cover" alt="" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800">{item.name}</h3>
+                      <p className="text-indigo-600 font-black text-sm">Rs. {item.price * (item.quantity || 1)}</p>
+                    </div>
                   </div>
-                  <div className="text-lg font-black text-slate-800 italic">Rs. {item.price * item.quantity}</div>
+                  
+                  {/* Quantity Switcher inside Cart */}
+                  <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                    <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8 bg-white rounded-lg shadow-sm font-bold text-slate-500">-</button>
+                    <span className="font-black text-sm w-4 text-center">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 bg-white rounded-lg shadow-sm font-bold text-emerald-500">+</button>
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                {/* ✅ SRS REQUIREMENT: Special Instructions Input */}
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    placeholder="Add special instructions (spicy, no onion...)" 
+                    className="w-full bg-slate-50 border-none rounded-xl p-3 pl-10 text-[11px] font-medium outline-none focus:ring-1 focus:ring-indigo-300"
+                    value={item.note || ""}
+                    onChange={(e) => updateNote(item.id, e.target.value)}
+                  />
+                  <MessageSquare size={14} className="absolute left-3.5 top-3.5 text-slate-300" />
+                </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* Total & Place Order */}
+        {/* Grand Total & Place Order Button */}
         {cart.length > 0 && (
-          <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50">
+          <div className="bg-white p-8 rounded-[45px] shadow-2xl border border-white shadow-indigo-100/50">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Grand Total</p>
-                <h2 className="text-4xl font-black text-slate-800 tracking-tighter">Rs. {total}</h2>
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Bill</p>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Rs. {total}</h2>
               </div>
-              <div className="p-4 bg-emerald-50 text-emerald-500 rounded-2xl">
+              <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
                 <CreditCard size={32}/>
               </div>
             </div>
@@ -119,11 +169,13 @@ export default function CustomerCart() {
             <button
               onClick={placeOrder}
               disabled={loading}
-              className="w-full bg-slate-900 text-white py-6 rounded-[24px] font-black uppercase tracking-widest shadow-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+              className="w-full bg-[#111] text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-black transition-all active:scale-95 disabled:bg-slate-200 flex items-center justify-center gap-3 text-sm"
             >
-              {loading ? "SENDING TO KITCHEN..." : <><CheckCircle size={20}/> Place Order Now</>}
+              {loading ? "SENDING TO KITCHEN..." : "Place Order Now"}
             </button>
-            <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-6">Payment will be handled at the counter</p>
+            <p className="text-center text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-6">
+               Manual Cash payment at counter
+            </p>
           </div>
         )}
       </div>
