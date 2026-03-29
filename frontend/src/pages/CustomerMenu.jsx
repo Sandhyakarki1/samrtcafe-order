@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, ShoppingBag, Star, Plus, Minus, Utensils, Pizza, Coffee, Flame, Check, Trash2 } from "lucide-react";
+import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check } from "lucide-react";
 
-const BASE_URL = "http://127.0.0.1:8000";
+// ✅ Verify this matches your current ngrok terminal exactly
+const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
 
 export default function CustomerMenu() {
   const [menu, setMenu] = useState([]);
@@ -23,8 +24,19 @@ export default function CustomerMenu() {
 
   useEffect(() => {
     localStorage.setItem("table", table);
-    fetch(`${BASE_URL}/api/menu/`)
-      .then(res => res.json())
+    
+    // ✅ ADDED HEADERS: This tells ngrok to skip the warning page and send the data
+    fetch(`${BASE_URL}/api/menu/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "69420", 
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
       .then(data => setMenu(data))
       .catch(err => console.error("Fetch Error:", err));
       
@@ -32,7 +44,6 @@ export default function CustomerMenu() {
     setCart(savedCart);
   }, [table]);
 
-  // Helper to save cart to state and localStorage
   const saveCart = (updatedCart) => {
     setCart(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
@@ -55,7 +66,6 @@ export default function CustomerMenu() {
     setActiveItemId(null); 
   };
 
-  
   const handleRemoveOne = (e, itemId) => {
     if (e) e.stopPropagation();
     const existing = cart.find(i => i.id === itemId);
@@ -109,7 +119,6 @@ export default function CustomerMenu() {
         </div>
       </div>
 
-      {/* WHITE CONTENT AREA */}
       <div className="bg-slate-50 rounded-t-[50px] min-h-screen p-6 shadow-2xl">
         {/* 3. CATEGORIES Slider */}
         <div className="flex gap-4 overflow-x-auto pb-8 no-scrollbar pt-2">
@@ -129,7 +138,7 @@ export default function CustomerMenu() {
 
         {/* 4. FOOD GRID */}
         <div className="grid grid-cols-2 gap-5">
-          {filteredMenu.map((item) => {
+          {filteredMenu.length > 0 ? filteredMenu.map((item) => {
             const cartItem = cart.find(i => i.id === item.id);
             const quantityInCart = cartItem ? cartItem.quantity : 0;
 
@@ -137,9 +146,15 @@ export default function CustomerMenu() {
               <div key={item.id} className="bg-white rounded-[35px] p-3 shadow-sm border border-white hover:border-orange-100 transition-all flex flex-col min-h-[220px]">
                 
                 <div className="w-full aspect-square overflow-hidden rounded-[28px] mb-3 bg-slate-100 shadow-inner relative">
-                  <img src={item.image ? `${BASE_URL}${item.image}` : ""} className="w-full h-full object-cover" alt={item.name}/>
+                  {/* ✅ IMAGE FIX: Added onError handler to show a placeholder if image fails to load */}
+                  <img 
+                    src={item.image ? `${BASE_URL}${item.image}` : "https://via.placeholder.com/150?text=No+Image"} 
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Food"; }}
+                    className="w-full h-full object-cover" 
+                    alt={item.name}
+                  />
                   {quantityInCart > 0 && (
-                    <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-lg animate-in zoom-in">
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-lg">
                       {quantityInCart} added
                     </div>
                   )}
@@ -152,38 +167,19 @@ export default function CustomerMenu() {
                   <span className="font-black text-orange-500 text-xs tracking-tighter">Rs {item.price}</span>
                   
                   <div className="relative h-9 flex items-center justify-end">
-                    {/* ✅ SHOW COUNTER IF ITEM IS IN CART */}
                     {quantityInCart > 0 ? (
-                      <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl animate-in fade-in slide-in-from-right-2">
-                        <button 
-                          onClick={(e) => handleRemoveOne(e, item.id)}
-                          className="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 active:scale-90"
-                        >
-                          <Minus size={14} />
-                        </button>
+                      <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                        <button onClick={(e) => handleRemoveOne(e, item.id)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm"><Minus size={14} /></button>
                         <span className="text-xs font-black text-slate-800 w-4 text-center">{quantityInCart}</span>
-                        <button 
-                          onClick={(e) => handleAddToCart(e, item)}
-                          className="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm text-emerald-600 active:scale-90"
-                        >
-                          <Plus size={14} />
-                        </button>
+                        <button onClick={(e) => handleAddToCart(e, item)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm"><Plus size={14} /></button>
                       </div>
                     ) : (
-                      /* SHOW TRANSFORMING BUTTON IF NOT IN CART */
                       activeItemId === item.id ? (
-                        <button 
-                          onClick={(e) => handleAddToCart(e, item)}
-                          className="bg-emerald-600 text-white px-3 py-2 rounded-xl shadow-lg font-bold text-[9px] uppercase tracking-widest animate-in slide-in-from-right-2 flex items-center gap-1"
-                        >
-                          Add to Cart <Check size={12} strokeWidth={4}/>
+                        <button onClick={(e) => handleAddToCart(e, item)} className="bg-emerald-600 text-white px-3 py-2 rounded-xl shadow-lg font-bold text-[9px] uppercase tracking-widest">
+                          Add <Check size={12} strokeWidth={4}/>
                         </button>
                       ) : (
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setActiveItemId(item.id); }}
-                          disabled={item.stock === 0}
-                          className="w-9 h-9 rounded-xl shadow-lg flex items-center justify-center bg-orange-500 text-white active:scale-90 disabled:bg-gray-200"
-                        >
+                        <button onClick={(e) => { e.stopPropagation(); setActiveItemId(item.id); }} disabled={item.stock === 0} className="w-9 h-9 rounded-xl shadow-lg flex items-center justify-center bg-orange-500 text-white active:scale-90 disabled:bg-gray-200">
                           <Plus size={18} strokeWidth={3}/>
                         </button>
                       )
@@ -192,17 +188,13 @@ export default function CustomerMenu() {
                 </div>
               </div>
             );
-          })}
+          }) : <div className="col-span-2 text-center py-10 text-slate-400 font-bold">Connecting to kitchen...</div>}
         </div>
       </div>
 
-      {/* 5. FLOATING VIEW CART BUTTON */}
       {cart.length > 0 && (
         <div className="fixed bottom-6 left-0 right-0 px-6 z-50">
-           <button
-            onClick={() => navigate('/cart')}
-            className="w-full max-w-md mx-auto bg-emerald-600 text-white py-5 rounded-[24px] shadow-2xl font-black flex justify-between items-center px-8 transition-transform active:scale-95"
-          >
+           <button onClick={() => navigate('/cart')} className="w-full max-w-md mx-auto bg-emerald-600 text-white py-5 rounded-[24px] shadow-2xl font-black flex justify-between items-center px-8 transition-transform active:scale-95">
             <div className="flex items-center gap-3">
                <ShoppingBag size={20}/>
                <div className="text-left leading-tight">
