@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // ✅ Changed to useParams
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check } from "lucide-react";
 
-// ✅ Verify this matches your current ngrok terminal exactly
 const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
 
 export default function CustomerMenu() {
@@ -11,8 +10,12 @@ export default function CustomerMenu() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeItemId, setActiveItemId] = useState(null); 
-  const [searchParams] = useSearchParams();
-  const table = searchParams.get("table") || "1";
+  const [loading, setLoading] = useState(true); 
+
+  
+  const { tableId } = useParams(); 
+  const table = tableId || "1"; 
+  
   const navigate = useNavigate();
 
   const categories = [
@@ -25,7 +28,7 @@ export default function CustomerMenu() {
   useEffect(() => {
     localStorage.setItem("table", table);
     
-    // ✅ ADDED HEADERS: This tells ngrok to skip the warning page and send the data
+    setLoading(true);
     fetch(`${BASE_URL}/api/menu/`, {
       method: "GET",
       headers: {
@@ -33,12 +36,15 @@ export default function CustomerMenu() {
         "ngrok-skip-browser-warning": "69420", 
       },
     })
-      .then(res => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
+      .then(res => res.json())
+      .then(data => {
+        setMenu(data);
+        setLoading(false);
       })
-      .then(data => setMenu(data))
-      .catch(err => console.error("Fetch Error:", err));
+      .catch(err => {
+        console.error("Fetch Error:", err);
+        setLoading(false);
+      });
       
     const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
     setCart(savedCart);
@@ -120,7 +126,7 @@ export default function CustomerMenu() {
       </div>
 
       <div className="bg-slate-50 rounded-t-[50px] min-h-screen p-6 shadow-2xl">
-        {/* 3. CATEGORIES Slider */}
+        {/*  CATEGORIES Slider */}
         <div className="flex gap-4 overflow-x-auto pb-8 no-scrollbar pt-2">
           {categories.map((cat) => (
             <button 
@@ -136,20 +142,26 @@ export default function CustomerMenu() {
           ))}
         </div>
 
-        {/* 4. FOOD GRID */}
+        {/* FOOD GRID */}
         <div className="grid grid-cols-2 gap-5">
-          {filteredMenu.length > 0 ? filteredMenu.map((item) => {
+          {loading ? (
+            <div className="col-span-2 text-center py-10 text-slate-400 font-bold italic">Opening kitchen door...</div>
+          ) : filteredMenu.length > 0 ? filteredMenu.map((item) => {
             const cartItem = cart.find(i => i.id === item.id);
             const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+
+            const itemImageUrl = item.image 
+                ? (item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`)
+                : "https://via.placeholder.com/150?text=Food";
 
             return (
               <div key={item.id} className="bg-white rounded-[35px] p-3 shadow-sm border border-white hover:border-orange-100 transition-all flex flex-col min-h-[220px]">
                 
                 <div className="w-full aspect-square overflow-hidden rounded-[28px] mb-3 bg-slate-100 shadow-inner relative">
-                  {/* ✅ IMAGE FIX: Added onError handler to show a placeholder if image fails to load */}
                   <img 
-                    src={item.image ? `${BASE_URL}${item.image}` : "https://via.placeholder.com/150?text=No+Image"} 
-                    onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Food"; }}
+                    src={itemImageUrl} 
+                    onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=SmartCafe"; }}
                     className="w-full h-full object-cover" 
                     alt={item.name}
                   />
@@ -188,7 +200,9 @@ export default function CustomerMenu() {
                 </div>
               </div>
             );
-          }) : <div className="col-span-2 text-center py-10 text-slate-400 font-bold">Connecting to kitchen...</div>}
+          }) : (
+            <div className="col-span-2 text-center py-10 text-slate-400 font-bold">No items found in this category.</div>
+          )}
         </div>
       </div>
 
