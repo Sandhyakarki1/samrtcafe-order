@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Added useNavigate
+import { useParams, useNavigate } from "react-router-dom";
 import { Clock, CheckCircle, ChefHat, Bell, Star, Send, MessageSquare, Utensils } from "lucide-react";
 
-const BASE_URL = "http://127.0.0.1:8000";
+//  ngrok link
+const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
 
 export default function CustomerOrderTracking() {
   const { id } = useParams(); 
-  const navigate = useNavigate(); // For smoother page transitions
+  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,7 +19,12 @@ export default function CustomerOrderTracking() {
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/orders/${id}/`);
+      
+      const response = await fetch(`${BASE_URL}/api/orders/${id}/`, {
+        headers: {
+          "ngrok-skip-browser-warning": "69420",
+        }
+      });
       if (!response.ok) throw new Error("Order not found");
       const data = await response.json();
       setOrder(data);
@@ -34,9 +40,7 @@ export default function CustomerOrderTracking() {
   useEffect(() => {
     fetchOrder();
     
-    // Auto-refresh every 5 seconds
     const interval = setInterval(() => {
-      // 🛑 Stop polling if order is served/paid OR if feedback was just submitted
       if (order?.status === 'Served' || order?.status === 'Paid' || submitted) {
         clearInterval(interval);
       } else {
@@ -52,7 +56,11 @@ export default function CustomerOrderTracking() {
     try {
       const response = await fetch(`${BASE_URL}/api/feedback/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          
+          "ngrok-skip-browser-warning": "69420",
+        },
         body: JSON.stringify({
           order_id: id,
           rating: rating,
@@ -85,7 +93,7 @@ export default function CustomerOrderTracking() {
       <div className="text-center bg-white p-10 rounded-[40px] shadow-xl w-full max-w-md">
         <h2 className="text-red-500 font-black text-2xl mb-2 text-center">Oops!</h2>
         <p className="text-slate-500 font-medium mb-6 text-center">{error}</p>
-        <button onClick={() => navigate('/menu')} className="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1">Back to Menu</button>
+        <button onClick={() => navigate('/menu/1')} className="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1">Back to Menu</button>
       </div>
     </div>
   );
@@ -93,7 +101,7 @@ export default function CustomerOrderTracking() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
       
-      {/* CASE 1: TRACKING (Pending, Preparing, or Ready) */}
+      {/*  TRACKING */}
       {order.status !== 'Served' && order.status !== 'Paid' && !submitted && (
         <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md border border-slate-100 text-center animate-in zoom-in duration-500">
           <h1 className="text-2xl font-black text-slate-800 mb-2">Order Tracking</h1>
@@ -123,7 +131,7 @@ export default function CustomerOrderTracking() {
         </div>
       )}
 
-      {/* CASE 2: FEEDBACK (Triggered when Status is 'Served') */}
+      {/* FEEDBACK */}
       {(order.status === 'Served' || order.status === 'Paid') && !submitted && (
         <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md border border-slate-100 animate-in slide-in-from-bottom duration-700">
           <div className="text-center mb-8">
@@ -168,16 +176,13 @@ export default function CustomerOrderTracking() {
         </div>
       )}
 
-      {/* CASE 3: SUCCESS */}
+      {/* SUCCESS */}
       {submitted && (
         <div className="text-center animate-in fade-in zoom-in duration-500">
            <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-100 border-2 border-white">
               <MessageSquare size={40}/>
            </div>
            <h1 className="text-3xl font-black text-slate-800">Thank You!</h1>
-           <p className="text-slate-500 mt-2 font-medium max-w-xs mx-auto italic">
-             "Your feedback helps us make Smart-Cafe even better. We hope to see you again soon!"
-           </p>
            <button 
             onClick={() => navigate(`/menu/${order.table_number}`)}
             className="mt-10 text-indigo-600 font-black border-b-4 border-indigo-100 hover:border-indigo-600 transition-all pb-1 uppercase text-xs tracking-widest"

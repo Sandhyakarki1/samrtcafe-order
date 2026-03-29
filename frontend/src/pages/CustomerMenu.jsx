@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // ✅ Changed to useParams
+import { useNavigate, useParams } from "react-router-dom"; 
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check } from "lucide-react";
 
 const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
