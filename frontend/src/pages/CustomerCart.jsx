@@ -141,7 +141,7 @@ export default function CustomerCart() {
                 <div className="relative">
                   <input 
                     type="text" 
-                    placeholder="Add special instructions (spicy, no onion...)" 
+                    placeholder="Add special instructions ()" 
                     className="w-full bg-slate-50 border-none rounded-xl p-3 pl-10 text-[11px] font-medium outline-none focus:ring-1 focus:ring-indigo-300"
                     value={item.note || ""}
                     onChange={(e) => updateNote(item.id, e.target.value)}
