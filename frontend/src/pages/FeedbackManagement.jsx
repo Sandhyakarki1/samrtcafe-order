@@ -14,7 +14,7 @@ const FeedbackManagement = () => {
   return (
     <div className="animate-in fade-in duration-500">
       <h1 className="text-3xl font-black text-slate-800 mb-2">Customer Feedback</h1>
-      <p className="text-slate-500 mb-10 font-medium">Real-time reviews from your tables</p>
+      <p className="text-slate-500 mb-10 font-medium">Real-time reviews from  tables</p>
 
       {feedbacks.length === 0 ? (
         <div className="bg-white p-20 text-center rounded-[40px] border border-dashed text-slate-300">
