@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom"; 
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check } from "lucide-react";
 
+
 const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
 
 export default function CustomerMenu() {
@@ -12,10 +13,8 @@ export default function CustomerMenu() {
   const [activeItemId, setActiveItemId] = useState(null); 
   const [loading, setLoading] = useState(true); 
 
-  
   const { tableId } = useParams(); 
   const table = tableId || "1"; 
-  
   const navigate = useNavigate();
 
   const categories = [
@@ -24,6 +23,26 @@ export default function CustomerMenu() {
     { name: "Snacks", icon: <Pizza size={18}/> },
     { name: "Drinks", icon: <Coffee size={18}/> },
   ];
+
+  
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "https://via.placeholder.com/150?text=No+Image";
+
+    
+    if (imagePath.includes("127.0.0.1:8000") || imagePath.includes("localhost:8000")) {
+      return imagePath.replace(/^http:\/\/(127\.0\.0\.1|localhost):8000/, BASE_URL);
+    }
+
+    
+    if (imagePath.startsWith("http")) return imagePath;
+
+    
+    if (imagePath.startsWith("/media/") || imagePath.startsWith("/static/")) {
+      return `${BASE_URL}${imagePath}`;
+    }
+
+    return `${BASE_URL}/media/${imagePath}`;
+  };
 
   useEffect(() => {
     localStorage.setItem("table", table);
@@ -112,7 +131,6 @@ export default function CustomerMenu() {
           </button>
         </div>
 
-        {/* SEARCH BAR */}
         <div className="relative mb-6">
           <input 
             type="text" placeholder="What are you craving?"
@@ -126,7 +144,7 @@ export default function CustomerMenu() {
       </div>
 
       <div className="bg-slate-50 rounded-t-[50px] min-h-screen p-6 shadow-2xl">
-        {/*  CATEGORIES Slider */}
+        {/*  CATEGORIES */}
         <div className="flex gap-4 overflow-x-auto pb-8 no-scrollbar pt-2">
           {categories.map((cat) => (
             <button 
@@ -150,17 +168,13 @@ export default function CustomerMenu() {
             const cartItem = cart.find(i => i.id === item.id);
             const quantityInCart = cartItem ? cartItem.quantity : 0;
 
-
-            const itemImageUrl = item.image 
-                ? (item.image.startsWith('http') ? item.image : `${BASE_URL}/media/${item.image}`)
-                : "https://via.placeholder.com/150?text=Food";
-
             return (
               <div key={item.id} className="bg-white rounded-[35px] p-3 shadow-sm border border-white hover:border-orange-100 transition-all flex flex-col min-h-[220px]">
                 
                 <div className="w-full aspect-square overflow-hidden rounded-[28px] mb-3 bg-slate-100 shadow-inner relative">
+                  
                   <img 
-                    src={itemImageUrl} 
+                    src={getImageUrl(item.image)} 
                     onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=SmartCafe"; }}
                     className="w-full h-full object-cover" 
                     alt={item.name}
@@ -201,7 +215,7 @@ export default function CustomerMenu() {
               </div>
             );
           }) : (
-            <div className="col-span-2 text-center py-10 text-slate-400 font-bold">No items found in this category.</div>
+            <div className="col-span-2 text-center py-10 text-slate-400 font-bold">No items found.</div>
           )}
         </div>
       </div>
