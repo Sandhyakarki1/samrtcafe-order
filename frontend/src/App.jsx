@@ -14,6 +14,9 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import MenuManagement from "./pages/Menumanagement.jsx"; 
 import Orders from "./pages/Orders.jsx";
+import QRCode from "./pages/QRCode.jsx";
+
+
 
 // Staff Dashboards
 import KitchenDashboard from './pages/KitchenDashboard';
@@ -47,6 +50,7 @@ function App() {
           <Route path="menu" element={<MenuManagement />} />
           <Route path="orders" element={<Orders />} /> 
           <Route path="feedback" element={<FeedbackManagement />} />
+          <Route path="qrcode" element={<QRCode />}/> 
         </Route>
 
         {/* ==========================================
@@ -58,24 +62,18 @@ function App() {
         {/* ==========================================
             CUSTOMER ROUTES
            ========================================== */}
-        {/* ✅ FIX 1: Allow /menu (for query params) and /menu/1 (for params) */}
+       
         <Route path="/menu" element={<CustomerMenu />} />
         <Route path="/menu/:tableId" element={<CustomerMenu />} />
         
         <Route path="/cart" element={<CustomerCart />} />
         
-        {/* ✅ FIX 2: Match your navigation! 
-            Changed from /order-status/:orderId to /track/:id 
-            because your Cart page does: navigate(`/track/${id}`) */}
         <Route path="/track/:id" element={<CustomerOrderTracking />} />
 
 
-        {/* ==========================================
-            REDIRECTS
-           ========================================== */}
         <Route path="/" element={<Navigate to="/admin/login" replace />} />
         
-        {/* 404 Catch-all */}
+        
         <Route path="*" element={
           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
             <h1 className="text-9xl font-black text-slate-200">404</h1>
