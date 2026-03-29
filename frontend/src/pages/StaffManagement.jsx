@@ -156,7 +156,7 @@ const StaffManagement = () => {
                   <input 
                     required className="w-full border-2 p-3 rounded-xl outline-none focus:border-indigo-500 mt-1" 
                     value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g. John Doe"
+                    placeholder=""
                   />
                </div>
                <div>
