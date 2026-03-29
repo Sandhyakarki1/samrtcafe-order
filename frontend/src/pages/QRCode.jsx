@@ -3,7 +3,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 
 const QRCodePage = () => {
   //The base URL for your customer site
-  const productionUrl = "https://smart-cafe.vercel.app/menu"; 
+  const productionUrl = "https://samrtcafe-order-5zdf.vercel.app/menu";
   
   const tables = [1, 2, 3, 4, 5];
 
