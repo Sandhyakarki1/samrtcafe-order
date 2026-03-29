@@ -12,7 +12,8 @@ import ResetPassword from "./pages/ResetPassword.jsx";
 import AdminLayout from "./components/AdminLayout.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
-import MenuManagement from "./pages/Menumanagement.jsx"; 
+import Menumanagement from "./pages/Menumanagement.jsx"; 
+
 import Orders from "./pages/Orders.jsx";
 import QRCode from "./pages/QRCode.jsx";
 
@@ -47,7 +48,7 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="staff" element={<StaffManagement />} />
-          <Route path="menu" element={<MenuManagement />} />
+          <Route path="menu" element={<Menumanagement />} />
           <Route path="orders" element={<Orders />} /> 
           <Route path="feedback" element={<FeedbackManagement />} />
           <Route path="qrcode" element={<QRCode />}/> 
