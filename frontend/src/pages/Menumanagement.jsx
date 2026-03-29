@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Utensils, Image as ImageIcon } from 'lucide-react';
 
+// Set ngrok link as the master URL
+const BASE_URL = "https://nila-irresistible-carmelina.ngrok-free.dev";
+const API_URL = `${BASE_URL}/api/menu/`;
+
 const MenuManagement = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,16 +16,34 @@ const MenuManagement = () => {
     price: '', 
     stock: '', 
     image: null,
-    description: '' //  Added description to state
+    description: '' 
   });
-  
-  const API_URL = "http://127.0.0.1:8000/api/menu/";
+
+  //  Logic to fix image paths coming from Django
+  const getFullImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+   
+    if (imagePath.includes('127.0.0.1:8000') || imagePath.includes('localhost:8000')) {
+        return imagePath.replace(/^http:\/\/(127\.0\.0\.1|localhost):8000/, BASE_URL);
+    }
+    
+    if (imagePath.startsWith('/')) {
+        return `${BASE_URL}${imagePath}`;
+    }
+
+    return `${BASE_URL}/media/${imagePath}`;
+  };
 
   useEffect(() => { fetchMenu(); }, []);
 
   const fetchMenu = async () => {
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL, {
+        headers: {
+            "ngrok-skip-browser-warning": "69420", 
+        }
+      });
       if (res.ok) setMenuItems(await res.json());
     } catch (err) {
       console.error("Failed to fetch menu");
@@ -40,7 +62,7 @@ const MenuManagement = () => {
     data.append('category', formData.category);
     data.append('price', formData.price);
     data.append('stock', formData.stock);
-    data.append('description', formData.description); // ✅ Appending description
+    data.append('description', formData.description); 
     
     if (formData.image instanceof File) {
       data.append('image', formData.image);
@@ -53,6 +75,10 @@ const MenuManagement = () => {
       const res = await fetch(url, {
         method: method,
         body: data,
+        
+        headers: {
+            "ngrok-skip-browser-warning": "69420",
+        }
       });
 
       if (res.ok) {
@@ -69,7 +95,10 @@ const MenuManagement = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
-      await fetch(`${API_URL}${id}/`, { method: 'DELETE' });
+      await fetch(`${API_URL}${id}/`, { 
+        method: 'DELETE',
+        headers: { "ngrok-skip-browser-warning": "69420" }
+      });
       fetchMenu();
     }
   };
@@ -112,9 +141,10 @@ const MenuManagement = () => {
                     <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-100 flex-shrink-0">
                       {item.image ? (
                         <img 
-                          src={`http://127.0.0.1:8000${item.image}`} 
+                          src={getFullImageUrl(item.image)} 
                           alt={item.name} 
                           className="w-full h-full object-cover"
+                          onError={(e) => e.target.src="https://via.placeholder.com/150"}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -123,7 +153,7 @@ const MenuManagement = () => {
                       )}
                     </div>
                     <div>
-                        <span className="font-bold text-gray-700 block">{item.name}</span>
+                        <span className="font-bold text-gray-700 block text-sm">{item.name}</span>
                         <span className="text-[10px] text-gray-400 line-clamp-1 max-w-[200px]">{item.description}</span>
                     </div>
                   </div>
@@ -167,12 +197,11 @@ const MenuManagement = () => {
                 <input required className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1" placeholder=" " value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               </div>
 
-              {/* NEW DESCRIPTION TEXTAREA */}
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Food Description</label>
                 <textarea 
                   className="w-full border-2 p-3 rounded-xl focus:border-indigo-500 outline-none mt-1 text-sm h-20 resize-none" 
-                  placeholder="e.g. Spicy grilled chicken with herbs..." 
+                  placeholder="Describe the dish..." 
                   value={formData.description} 
                   onChange={e => setFormData({...formData, description: e.target.value})}
                 />
