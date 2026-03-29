@@ -8,17 +8,17 @@ export default function CustomerCart() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // 1. Initial Cart State
+  //  Initial Cart State
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
   const table = localStorage.getItem("table") || "1";
 
-  // 2. Helper to sync with localStorage
+  //  Helper to sync with localStorage
   const syncCart = (newCart) => {
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
   };
 
-  // 3. Update Quantity Logic (The +/- buttons)
+  //  Update Quantity Logic 
   const updateQuantity = (id, delta) => {
     const updated = cart.map(item => {
       if (item.id === id) {
@@ -30,7 +30,7 @@ export default function CustomerCart() {
     syncCart(updated);
   };
 
-  // 4. Update Special Notes (SRS Requirement)
+  
   const updateNote = (id, note) => {
     const updated = cart.map(item => item.id === id ? { ...item, note } : item);
     syncCart(updated);
@@ -55,14 +55,14 @@ export default function CustomerCart() {
       items: cart.map(item => ({
         id: item.id,
         qty: item.quantity || 1,
-        instructions: item.note || "" // ✅ Included notes for the Chef
+        instructions: item.note || "" 
       }))
     };
 
     try {
       const response = await fetch(`${BASE_URL}/api/place-order/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json","ngrok-skip-browser-warning": "69420", },
         body: JSON.stringify(orderData)
       });
 
@@ -70,7 +70,7 @@ export default function CustomerCart() {
 
       if (response.ok) {
         localStorage.removeItem("cart"); 
-        // Sync with your App.jsx tracking route
+        
         navigate(`/track/${data.order_id || data.id}`); 
       } else {
         alert("Order failed: " + (data.error || "Stock issue"));
@@ -137,7 +137,7 @@ export default function CustomerCart() {
                   </div>
                 </div>
 
-                {/* ✅ SRS REQUIREMENT: Special Instructions Input */}
+              
                 <div className="relative">
                   <input 
                     type="text" 

@@ -95,7 +95,7 @@ export default function CustomerMenu() {
 
   return (
     <div className="bg-[#FFB100] min-h-screen font-sans pb-32" onClick={() => setActiveItemId(null)}>
-      {/* 1. HEADER */}
+      {/*  HEADER */}
       <div className="p-6 pb-2">
         <div className="flex justify-between items-center mb-6">
           <div className="text-white">
@@ -112,7 +112,7 @@ export default function CustomerMenu() {
           </button>
         </div>
 
-        {/* 2. SEARCH BAR */}
+        {/* SEARCH BAR */}
         <div className="relative mb-6">
           <input 
             type="text" placeholder="What are you craving?"
@@ -152,7 +152,7 @@ export default function CustomerMenu() {
 
 
             const itemImageUrl = item.image 
-                ? (item.image.startsWith('http') ? item.image : `${BASE_URL}${item.image}`)
+                ? (item.image.startsWith('http') ? item.image : `${BASE_URL}/media/${item.image}`)
                 : "https://via.placeholder.com/150?text=Food";
 
             return (
