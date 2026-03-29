@@ -2,7 +2,7 @@ import React from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const QRCodePage = () => {
-  // Choice B URL: Update this when you deploy to Vercel
+  
   const productionUrl = "https://smart-cafe.vercel.app/menu"; 
   
   const tables = [1, 2, 3, 4, 5];
@@ -20,7 +20,7 @@ const QRCodePage = () => {
     document.body.removeChild(downloadLink);
   };
 
-  // NEW: Function to copy the link address to your clipboard
+  //Function to copy the link address 
   const copyLink = (tableNum) => {
     const fullUrl = `${productionUrl}?table=${tableNum}`;
     navigator.clipboard.writeText(fullUrl).then(() => {
