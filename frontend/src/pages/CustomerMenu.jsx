@@ -191,7 +191,8 @@ export default function CustomerMenu() {
 
                 <div className="flex justify-between items-center px-1 mt-auto pb-1">
                   <span className="font-black text-orange-500 text-xs tracking-tighter">Rs {item.price}</span>
-                  
+                  <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tight -mt-1">
+                       Incl. 13% VAT</span>
                   <div className="relative h-9 flex items-center justify-end">
                     {quantityInCart > 0 ? (
                       <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
