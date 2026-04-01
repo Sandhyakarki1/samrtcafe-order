@@ -8,11 +8,13 @@ import StaffLogin from "./pages/StaffLogin.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 
+
 // Admin Pages
 import AdminLayout from "./components/AdminLayout.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import Menumanagement from "./pages/Menumanagement.jsx"; 
+import Billing from "./pages/Billing.jsx";
 
 import Orders from "./pages/Orders.jsx";
 import QRCode from "./pages/QRCode.jsx";
@@ -51,6 +53,7 @@ function App() {
           <Route path="menu" element={<Menumanagement />} />
           <Route path="orders" element={<Orders />} /> 
           <Route path="feedback" element={<FeedbackManagement />} />
+          <Route path="billingh" element={<Billing/>} />
           <Route path="qrcode" element={<QRCode />}/> 
         </Route>
 
