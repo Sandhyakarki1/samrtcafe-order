@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# 1. PROFILE MODEL (For Admin/Waiter Roles)
+
 class Profile(models.Model):
     ROLE_CHOICES = (
         ('Admin', 'Admin'),

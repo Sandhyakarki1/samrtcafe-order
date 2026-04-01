@@ -8,7 +8,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==================================================
 SECRET_KEY = 'django-insecure-l6g6c(axm1g)m3gh0og2&$^szov!)b$w+4p35ajejmeqiksm19'
 DEBUG = True
-ALLOWED_HOSTS = ['*'] 
+
+# Added ngrok domain to allowed hosts
+ALLOWED_HOSTS = [
+    '*', 
+    'nila-irresistible-carmelina.ngrok-free.dev',
+    'localhost',
+    '127.0.0.1'
+]
+
+# Specific Origins for better security
+CORS_ALLOWED_ORIGINS = [
+    "https://smart-cafe.vercel.app",
+    "https://nila-irresistible-carmelina.ngrok-free.dev",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",  
+]
+
+# This is required for POST requests (Placing Orders) to work from Vercel/Phones
+CSRF_TRUSTED_ORIGINS = [
+    "https://smart-cafe.vercel.app",
+    "https://nila-irresistible-carmelina.ngrok-free.dev",
+]
 
 # ==================================================
 # INSTALLED APPS
@@ -25,7 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    #  SmartCafe App
+    # SmartCafe App
     'admin_panel',
 ]
 
@@ -56,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media', 
             ],
         },
     },
@@ -81,15 +104,21 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny', 
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication', # Added for simpler admin testing
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
 }
 
 # ==================================================
-# CORS
+# CORS SETTINGS (UPDATED FOR NGROK)
 # ==================================================
 CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_CREDENTIALS = True
+
+# This allows the special ngrok-skip header from  React code
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "ngrok-skip-browser-warning",
+]
 
 # ==================================================
 # STATIC & MEDIA FILES (For Menu Images)
@@ -101,22 +130,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ==================================================
-# EMAIL SETTINGS (For OTP Feature)
-# ==================================================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'admin@smartcafe.com'
-
-# ==================================================
-# INTERNATIONALIZATION (UPDATED TO NEPAL TIME)
+# INTERNATIONALIZATION (NEPAL TIME)
 # ==================================================
 LANGUAGE_CODE = 'en-us'
-
-#  Set to Nepal Timezone
 TIME_ZONE = 'Asia/Kathmandu'
-
 USE_I18N = True
-
-# Enables Django to use the timezone set above
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

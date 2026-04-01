@@ -4,6 +4,10 @@ from django.http import HttpResponse
 from django.conf import settings 
 from django.conf.urls.static import static 
 
+admin.site.site_header = "SmartCafe Admin Portal"
+admin.site.index_title = "Welcome to SmartCafe Kitchen"
+
+
 def home(request):
     return HttpResponse("SmartCafe backend is running!")
 

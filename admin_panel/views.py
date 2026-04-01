@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
-# Models and Serializers
+
 from .models import Feedback, Profile, Order, OrderItem, MenuItem
 from .serializers import FeedbackSerializer, UserSerializer, MenuItemSerializer, OrderSerializer
 
@@ -148,7 +148,7 @@ class MenuItemDetailView(APIView):
         return Response(status=204)
 
 # ==================================================
-# ORDER LOGIC - ✅ FIXED NOTE BUGS HERE
+# ORDER LOGIC 
 # ==================================================
 class PlaceOrderView(APIView):
     permission_classes = [AllowAny]
@@ -163,16 +163,16 @@ class PlaceOrderView(APIView):
                     menu_item = MenuItem.objects.get(id=item_data['id'])
                     qty = int(item_data['qty'])
 
-                    # ✅ THE FIX: Capture the 'instructions' from the cart
+                    
                     note = item_data.get('instructions', "") 
 
-                    # Stock is reduced automatically via OrderItem.save() logic in models.py
+                   
                     OrderItem.objects.create(
                         order=order, 
                         menu_item=menu_item, 
                         quantity=qty, 
                         price=menu_item.price,  
-                        instructions=note # ✅ CORRECTED: Use 'note' variable
+                        instructions=note 
                     )
                     
                     total += (menu_item.price * qty)
@@ -186,7 +186,7 @@ class PlaceOrderView(APIView):
 class OrderListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        # type=live shows active tables, type=history shows paid
+        
         order_type = request.query_params.get('type', 'live')
         if order_type == 'history':
             orders = Order.objects.filter(status='Paid').order_by('-created_at')

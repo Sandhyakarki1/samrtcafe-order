@@ -82,7 +82,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
         fields = ['id', 'order', 'table_number', 'items_summary', 'rating', 'comment', 'formatted_date']
 
     def get_formatted_date(self, obj):
-        # Format the date nicely for your MacBook browser display
+        
         return obj.created_at.strftime("%b %d, %I:%M %p")
 
     def get_items_summary(self, obj):

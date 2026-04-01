@@ -14,7 +14,7 @@ class ProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (ProfileInline, )
-    # This adds the "Role" column to the Django Admin list
+   
     list_display = ('username', 'email', 'get_role', 'is_staff')
 
     def get_role(self, obj):
@@ -32,7 +32,7 @@ admin.site.register(User, CustomUserAdmin)
 class MenuItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'stock', 'stock_status')
 
-    # we use 'category' and 'stock' or just 'category'.
+    # we use 'category' and 'stock' 
     list_filter = ('category',) 
     
     search_fields = ('name',)
