@@ -7,13 +7,14 @@ import {
   ClipboardList,   
   MessageSquare,   
   QrCode,
+
   LogOut
 } from 'lucide-react';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
 
-  // 1. Centralized Menu Items Array
+  // Centralized Menu Items Array
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Staff', path: '/admin/staff', icon: <Users size={20} /> },
@@ -21,10 +22,11 @@ const AdminLayout = () => {
     { name: 'Orders', path: '/admin/orders', icon: <ClipboardList size={20} /> },
     { name: 'Feedback', path: '/admin/feedback', icon: <MessageSquare size={20} /> },
     { name: 'QR Code', path: '/admin/qrcode', icon: <QrCode size={20} /> },
+    { name: 'Billing', path: '/admin/billing', icon: <QrCode size={20} /> },
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_user"); // Clear login session
+    localStorage.removeItem("admin_user"); 
     navigate("/admin/login");
   };
 
