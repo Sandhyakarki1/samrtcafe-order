@@ -53,7 +53,7 @@ function App() {
           <Route path="menu" element={<Menumanagement />} />
           <Route path="orders" element={<Orders />} /> 
           <Route path="feedback" element={<FeedbackManagement />} />
-          <Route path="billingh" element={<Billing/>} />
+          <Route path="billing" element={<Billing/>} />
           <Route path="qrcode" element={<QRCode />}/> 
         </Route>
 
