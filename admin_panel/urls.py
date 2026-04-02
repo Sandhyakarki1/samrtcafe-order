@@ -4,7 +4,7 @@ from .views import (
     admin_forgot_password, admin_reset_password, admin_dashboard_stats,
     StaffManagementView, StaffDetailView,
     MenuManagementView, MenuItemDetailView,
-    OrderListView, OrderDetailView, PlaceOrderView, FeedbackView,
+    OrderListView, OrderDetailView, PlaceOrderView, FeedbackView, SettleBillView, BillDetailView
 
 )
 
@@ -30,6 +30,9 @@ urlpatterns = [
     path('place-order/', PlaceOrderView.as_view(), name='place_order'),
     
     #Feedback management
-path('feedback/', FeedbackView.as_view(), name='feedback_api'),
+    path('feedback/', FeedbackView.as_view(), name='feedback_api'),
    
+   #Billing management
+       path('orders/<int:pk>/settle/', SettleBillView.as_view(), name='settle_bill'),
+         path('orders/<int:pk>/bill-details/', BillDetailView.as_view(), name='bill_details'),
 ]
