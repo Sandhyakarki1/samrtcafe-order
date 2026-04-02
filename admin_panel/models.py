@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils import timezone
+from decimal import Decimal
 
 class Profile(models.Model):
     ROLE_CHOICES = (
@@ -17,7 +18,6 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
-# Signal to auto create Profile
 @receiver(post_save, sender=User)
 def manage_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -26,7 +26,6 @@ def manage_user_profile(sender, instance, created, **kwargs):
         instance.profile.save()
 
 
-# MENU ITEM MODEL
 class MenuItem(models.Model):
     CATEGORY_CHOICES = (
         ('Meals', 'Meals'),
@@ -44,25 +43,42 @@ class MenuItem(models.Model):
         return self.name
 
 
-#  ORDER MODEL
 class Order(models.Model):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Preparing', 'Preparing'),
         ('Ready', 'Ready'),
         ('Served', 'Served'),
+        ('Paid', 'Paid'), 
     )
     table_number = models.IntegerField(choices=[(i, f'Table {i}') for i in range(1, 6)])
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    # --- BILLING FIELDS ---
+    payment_method = models.CharField(max_length=20, default='Cash') 
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    @property
+    def net_amount(self):
+        return round(float(self.total_price) / 1.13, 2)
+
+    @property
+    def vat_amount(self):
+        return round(float(self.total_price) - self.net_amount, 2)
 
     def __str__(self):
-        return f"Table {self.table_number} - {self.status}"
+        return f"Order #{self.id} - Table {self.table_number}"
+
+class Billing(Order):
+    class Meta:
+        proxy = True
+        verbose_name = 'Billing & Payment'
+        verbose_name_plural = 'Billing & Payments'
 
 
-# ORDER ITEM MODEL
 class OrderItem(models.Model):
     order = models.ForeignKey('Order', related_name='items', on_delete=models.CASCADE)
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
@@ -71,28 +87,20 @@ class OrderItem(models.Model):
     instructions = models.TextField(blank=True, null=True) 
 
     def save(self, *args, **kwargs):
-        #  Check if this is a NEW order item 
         if not self.pk:
             if self.menu_item.stock < self.quantity:
                 raise ValueError(f"Not enough {self.menu_item.name} in stock!")
-            
-            # Subtract from stock
             self.menu_item.stock -= self.quantity
             self.menu_item.save()
-            
-            # Automatically set the price from the menu if not provided
             if not self.price:
                 self.price = self.menu_item.price
-                
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name}"
    
 
-
 class Feedback(models.Model):
-    # Link to the order
     order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='feedback')
     rating = models.IntegerField(default=5)
     comment = models.TextField(blank=True, null=True)
