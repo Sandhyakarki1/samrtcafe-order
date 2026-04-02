@@ -5,6 +5,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -12,10 +13,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
-
 from .models import Feedback, Profile, Order, OrderItem, MenuItem
 from .serializers import FeedbackSerializer, UserSerializer, MenuItemSerializer, OrderSerializer
-
 
 # ==================================================
 # ADMIN DASHBOARD STATISTICS 
@@ -28,11 +27,15 @@ def admin_dashboard_stats(request):
     total_menu = MenuItem.objects.count()
     total_staff = User.objects.filter(is_superuser=False).count()
     
+    # Calculate Total Revenue from Paid orders
+    total_revenue = sum(Order.objects.filter(status='Paid').values_list('total_price', flat=True))
+    
     return Response({
         "total_orders": total_orders,
         "pending_orders": pending_orders,
         "total_menu": total_menu,
-        "total_staff": total_staff
+        "total_staff": total_staff,
+        "total_revenue": total_revenue
     })
 
 # ==================================================
@@ -95,7 +98,7 @@ def admin_reset_password(request):
     return Response({"error": "Invalid OTP"}, status=400)
 
 # ==================================================
-# MANAGEMENT (STAFF & MENU) 
+# MANAGEMENT 
 # ==================================================
 class StaffManagementView(APIView):
     permission_classes = [AllowAny]
@@ -158,15 +161,10 @@ class PlaceOrderView(APIView):
             with transaction.atomic():
                 order = Order.objects.create(table_number=data['table_number'])
                 total = 0
-
                 for item_data in data['items']:
                     menu_item = MenuItem.objects.get(id=item_data['id'])
                     qty = int(item_data['qty'])
-
-                    
                     note = item_data.get('instructions', "") 
-
-                   
                     OrderItem.objects.create(
                         order=order, 
                         menu_item=menu_item, 
@@ -174,9 +172,7 @@ class PlaceOrderView(APIView):
                         price=menu_item.price,  
                         instructions=note 
                     )
-                    
                     total += (menu_item.price * qty)
-
                 order.total_price = total
                 order.save()
                 return Response({"message": "Order placed!", "order_id": order.id}, status=201)
@@ -186,12 +182,11 @@ class PlaceOrderView(APIView):
 class OrderListView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        
         order_type = request.query_params.get('type', 'live')
         if order_type == 'history':
             orders = Order.objects.filter(status='Paid').order_by('-created_at')
         else:
-            orders = Order.objects.exclude(status='Paid').order_by('table_number')
+            orders = Order.objects.exclude(status='Paid').order_by('created_at')
         return Response(OrderSerializer(orders, many=True).data)
 
 class OrderDetailView(APIView):
@@ -205,6 +200,8 @@ class OrderDetailView(APIView):
         new_status = request.data.get('status')
         if new_status:
             order.status = new_status
+            if new_status == 'Paid':
+                order.paid_at = timezone.now()
             order.save()
             return Response({"message": f"Updated to {new_status}"})
         return Response({"error": "Status required"}, status=400)
@@ -214,24 +211,50 @@ class OrderDetailView(APIView):
         return Response(status=204)
 
 # ==================================================
+# BILLING SYSTEM 
+# ==================================================     
+class SettleBillView(APIView):
+    permission_classes = [AllowAny] 
+    def patch(self, request, pk):
+        try:
+            order = Order.objects.get(pk=pk)
+            order.status = 'Paid'
+            order.paid_at = timezone.now()
+            order.save()
+            return Response({"message": "Bill settled successfully!"}, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class BillDetailView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        total = float(order.total_price)
+        net_amount = total / 1.13
+        vat_amount = total - net_amount
+        return Response({
+            "table": order.table_number,
+            "total": total,
+            "net": round(net_amount, 2),
+            "vat": round(vat_amount, 2),
+            "status": order.status
+        })
+
+# ==================================================
 # FEEDBACK SYSTEM 
 # ==================================================
 class FeedbackView(APIView):
     permission_classes = [AllowAny]
-
     def get(self, request):
         feedbacks = Feedback.objects.all().order_by('-created_at')
         serializer = FeedbackSerializer(feedbacks, many=True)
         return Response(serializer.data)
-
     def post(self, request):
         order_id = request.data.get('order_id')
         rating = request.data.get('rating')
         comment = request.data.get('comment')
-
         if not order_id or not rating:
             return Response({"error": "Order ID and Rating are required"}, status=400)
-
         try:
             order = Order.objects.get(id=order_id)
             obj, created = Feedback.objects.get_or_create(
