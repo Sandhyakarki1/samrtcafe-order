@@ -7,6 +7,7 @@ import {
   ClipboardList,   
   MessageSquare,   
   QrCode,
+  ReceiptText,
 
   LogOut
 } from 'lucide-react';
@@ -22,7 +23,7 @@ const AdminLayout = () => {
     { name: 'Orders', path: '/admin/orders', icon: <ClipboardList size={20} /> },
     { name: 'Feedback', path: '/admin/feedback', icon: <MessageSquare size={20} /> },
     { name: 'QR Code', path: '/admin/qrcode', icon: <QrCode size={20} /> },
-    { name: 'Billing', path: '/admin/billing', icon: <QrCode size={20} /> },
+    { name: 'Billing', path: '/admin/billing', icon: <ReceiptText size={20} /> },
   ];
 
   const handleLogout = () => {
