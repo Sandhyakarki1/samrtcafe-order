@@ -55,7 +55,7 @@ const Billing = () => {
       <div className="flex justify-between items-end mb-10">
         <div>
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">Billing Counter</h1>
-          <p className="text-slate-500 font-medium italic">Cash settlements & Tax breakdowns</p>
+          <p className="text-slate-500 font-medium italic">Cash settlements </p>
         </div>
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
             <Search size={18} className="text-slate-300"/>
