@@ -74,7 +74,7 @@ const AdminLayout = () => {
       {/* --- MAIN SECTION --- */}
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* ✅ THE TOP HEADER BAR */}
+        {/* THE TOP HEADER BAR */}
         <header className="bg-white border-b border-slate-100 h-20 flex items-center justify-between px-8 z-30 shadow-sm">
           <div>
             <h2 className="text-slate-800 font-bold text-sm uppercase tracking-widest">
@@ -90,7 +90,7 @@ const AdminLayout = () => {
                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
 
-            {/* --- ADMIN AVATAR HUB (Right Side) --- */}
+            {/* --- ADMIN AVATAR HUB --- */}
             <div className="relative">
               <button 
                 onClick={(e) => { e.stopPropagation(); setIsProfileOpen(!isProfileOpen); }}
