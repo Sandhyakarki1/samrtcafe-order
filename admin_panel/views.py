@@ -44,14 +44,24 @@ class AdminLoginView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         email, password = request.data.get("email"), request.data.get("password")
+        if not email or not password:
+            return Response({"error": "Please provide both email and password"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user_obj = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({"error": "Invalid email"}, status=401)
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         user = authenticate(username=user_obj.username, password=password)
-        if user and user.profile.role == "Admin":
-            return Response({"message": "Success", "username": user.username, "email": user.email, "role": "Admin"})
-        return Response({"error": "Unauthorized"}, status=403)
+        if user is not None:
+            user_role = getattr(user.profile, "role", "Staff")
+            if user_role == "Admin":
+                return Response({
+                    "message": "Login successful",
+                    "username": user.username, 
+                    "email": user.email,       
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Access denied. Admin portal only."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Invalid email or password"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class StaffLoginView(APIView):
     permission_classes = [AllowAny]
