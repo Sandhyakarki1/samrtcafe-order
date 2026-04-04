@@ -8,15 +8,15 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // 1. Fetch Stats from your Django API
+      //  Fetch Stats from your Django API
       const statsRes = await fetch("http://127.0.0.1:8000/api/stats/");
       const statsData = await statsRes.json();
       
-      // 2. Fetch Orders for the activity table
+      // Fetch Orders for the activity table
       const ordersRes = await fetch("http://127.0.0.1:8000/api/orders/");
       const ordersData = await ordersRes.json();
 
-      // 3. Fetch Menu to check for Low Stock
+      // Fetch Menu to check for Low Stock
       const menuRes = await fetch("http://127.0.0.1:8000/api/menu/");
       const menuData = await menuRes.json();
 
@@ -43,12 +43,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="animate-in fade-in duration-700">
-      {/* 
-          ✅ GREETING REMOVED FROM HERE 
-          Because it is now in the Top Header of AdminLayout.jsx
-      */}
+      
 
-      {/* 1. STAT CARDS (Now starts directly with data) */}
+      {/*  STAT CARDS  */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard icon={<Users className="text-blue-600"/>} label="Total Staff" value={stats.total_staff} />
         <StatCard icon={<Utensils className="text-emerald-500"/>} label="Menu Items" value={stats.total_menu} />
@@ -56,7 +53,7 @@ const AdminDashboard = () => {
         <StatCard icon={<Clock className="text-orange-500"/>} label="Pending Prep" value={stats.pending_orders} />
       </div>
 
-      {/* 2. LOWER CONTENT: ACTIVITY & ALERTS */}
+      {/*  ACTIVITY & ALERTS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* RECENT ACTIVITY TABLE */}
@@ -139,7 +136,7 @@ const AdminDashboard = () => {
   );
 };
 
-// Internal Sub-component for clean code
+
 const StatCard = ({ icon, label, value }) => (
   <div className="bg-white p-8 rounded-[40px] border border-slate-50 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 group">
     <div className="flex justify-between items-start mb-5">
