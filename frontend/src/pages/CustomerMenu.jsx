@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check, Flame } from "lucide-react";
 
 
-const BASE_URL = "https://wings-paintball-than-yrs.trycloudflare.com";
+const BASE_URL = "https://presence-clarke-collectables-working.trycloudflare.com";
 
 export default function CustomerMenu() {
   const [menu, setMenu] = useState([]);
@@ -27,7 +27,7 @@ export default function CustomerMenu() {
   useEffect(() => {
     localStorage.setItem("table", table);
     setLoading(true);
-    // Standard Fetch - No special headers needed for Cloudflare
+    
     fetch(`${BASE_URL}/api/menu/`)
       .then(res => res.json())
       .then(data => { setMenu(data); setLoading(false); })
@@ -126,7 +126,9 @@ export default function CustomerMenu() {
           )})}
         </div>
       </div>
-      {cart.length > 0 && <div className="fixed bottom-6 left-0 right-0 px-6 z-50 animate-in slide-in-from-bottom-4"><button onClick={() => navigate('/cart')} className="w-full max-w-md mx-auto bg-emerald-600 text-white py-5 rounded-[24px] shadow-2xl font-black flex justify-between items-center px-8 transition-transform active:scale-95"><span>{cart.reduce((a,b)=>a+b.quantity, 0)} Items</span><span>View Order →</span></button></div>}
+      {cart.length > 0 && <div className="fixed bottom-6 left-0 right-0 px-6 z-50 animate-in slide-in-from-bottom-4"><button
+       onClick={() => navigate('/cart')} className="w-full max-w-md mx-auto bg-emerald-600 text-white py-5 rounded-[24px] shadow-2xl font-black flex justify-between items-center px-8 transition-transform active:scale-95">
+        <span>{cart.reduce((a,b)=>a+b.quantity, 0)} Items</span><span>View Order →</span></button></div>}
     </div>
   );
 }

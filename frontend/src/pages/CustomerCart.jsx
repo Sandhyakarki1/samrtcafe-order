@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard, MessageSquare, Plus, Minus } from "lucide-react";
 
 
-const BASE_URL = "https://wings-paintball-than-yrs.trycloudflare.com";
+const BASE_URL = "https://presence-clarke-collectables-working.trycloudflare.com";
 
 export default function CustomerCart() {
   const navigate = useNavigate();
@@ -53,7 +53,7 @@ export default function CustomerCart() {
     };
 
     try {
-      // ✅ CLEAN FETCH: Removed ngrok headers
+      
       const response = await fetch(`${BASE_URL}/api/place-order/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
