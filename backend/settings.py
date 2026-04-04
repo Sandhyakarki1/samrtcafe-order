@@ -11,6 +11,8 @@ SECRET_KEY = 'django-insecure-l6g6c(axm1g)m3gh0og2&$^szov!)b$w+4p35ajejmeqiksm19
 DEBUG = True
 
 # Allows any tunnel link to connect 
+ALLOWED_HOSTS = ['*']
+
 
 # ==================================================
 # INSTALLED APPS
@@ -27,12 +29,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    # Your SmartCafe App
+    #  SmartCafe App
     'admin_panel',
 ]
 
 # ==================================================
-# MIDDLEWARE (Order is critical!)
+# MIDDLEWARE 
 # ==================================================
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
@@ -40,8 +42,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware', # Required for login
-    'django.contrib.messages.middleware.MessageMiddleware', # Required for admin messages
+    'django.contrib.auth.middleware.AuthenticationMiddleware', 
+    'django.contrib.messages.middleware.MessageMiddleware', 
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -91,7 +93,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://smart-cafe.vercel.app",
 ]
 
-# Standard headers (Removed ngrok-specific hacks)
+# Standard headers 
 from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers)
 
@@ -118,7 +120,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ==================================================
-# INTERNATIONALIZATION (NEPAL TIME)
+# INTERNATIONALIZATION 
 # ==================================================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kathmandu'
@@ -128,7 +130,7 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ==================================================
-# EMAIL SETTINGS (OTP console fallback)
+# EMAIL SETTINGS 
 # ==================================================
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'admin@smartcafe.com'
