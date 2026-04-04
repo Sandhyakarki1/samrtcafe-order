@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ==================================================
@@ -9,28 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-l6g6c(axm1g)m3gh0og2&$^szov!)b$w+4p35ajejmeqiksm19'
 DEBUG = True
 
-# Added ngrok domain to allowed hosts
-ALLOWED_HOSTS = [
-    '*', 
-    'nila-irresistible-carmelina.ngrok-free.dev',
-    'localhost',
-    '127.0.0.1'
-]
-
-# Specific Origins for better security
-CORS_ALLOWED_ORIGINS = [
-    "https://smart-cafe.vercel.app",
-    "https://nila-irresistible-carmelina.ngrok-free.dev",
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",  
-]
-
-# This is required for POST requests (Placing Orders) to work from Vercel/Phones
-CSRF_TRUSTED_ORIGINS = [
-    "https://smart-cafe.vercel.app",
-    "https://nila-irresistible-carmelina.ngrok-free.dev",
-]
+# Allows any tunnel link to connect 
 
 # ==================================================
 # INSTALLED APPS
@@ -47,12 +27,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    # SmartCafe App
+    # Your SmartCafe App
     'admin_panel',
 ]
 
 # ==================================================
-# MIDDLEWARE
+# MIDDLEWARE (Order is critical!)
 # ==================================================
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', 
@@ -60,13 +40,16 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware', # Required for login
+    'django.contrib.messages.middleware.MessageMiddleware', # Required for admin messages
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
 
+# ==================================================
+# TEMPLATES (Required for Django Admin to load)
+# ==================================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -97,6 +80,22 @@ DATABASES = {
 }
 
 # ==================================================
+# CORS & CSRF (CLEANED FOR CLOUDFLARE)
+# ==================================================
+CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOW_CREDENTIALS = True
+
+# Allows any Cloudflare tunnel to send POST requests
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.trycloudflare.com",
+    "https://smart-cafe.vercel.app",
+]
+
+# Standard headers (Removed ngrok-specific hacks)
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers)
+
+# ==================================================
 # DRF SETTINGS
 # ==================================================
 REST_FRAMEWORK = {
@@ -105,20 +104,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
-
-# ==================================================
-# CORS SETTINGS (UPDATED FOR NGROK)
-# ==================================================
-CORS_ALLOW_ALL_ORIGINS = True 
-CORS_ALLOW_CREDENTIALS = True
-
-# This allows the special ngrok-skip header from  React code
-from corsheaders.defaults import default_headers
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "ngrok-skip-browser-warning",
-]
 
 # ==================================================
 # STATIC & MEDIA FILES (For Menu Images)
@@ -138,3 +126,9 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==================================================
+# EMAIL SETTINGS (OTP console fallback)
+# ==================================================
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'admin@smartcafe.com'
