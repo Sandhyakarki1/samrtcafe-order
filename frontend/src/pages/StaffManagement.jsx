@@ -61,7 +61,7 @@ const StaffManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Prepare payload
+   
     const payload = {
       username: formData.name,
       email: formData.email,
@@ -87,7 +87,7 @@ const StaffManagement = () => {
         setIsModalOpen(false);
       } else {
         const errorData = await response.json();
-        // Convert error object to string for the alert
+        
         alert("Error: " + JSON.stringify(errorData));
       }
     } catch (error) {

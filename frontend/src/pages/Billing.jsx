@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, DollarSign, Printer, Receipt, Search } from 'lucide-react';
 
 
-const BASE_URL = "https://wings-paintball-than-yrs.trycloudflare.com";
+const BASE_URL = "https://presence-clarke-collectables-working.trycloudflare.com";
 
 const Billing = () => {
   const [orders, setOrders] = useState([]);
@@ -16,7 +16,7 @@ const Billing = () => {
 
   const fetchServedOrders = async () => {
     try {
-      // ✅ CLEAN FETCH: No headers needed for GET on Cloudflare
+      
       const res = await fetch(`${BASE_URL}/api/orders/`);
       const data = await res.json();
       const servedOnly = data.filter(o => o.status === 'Served');
@@ -30,7 +30,7 @@ const Billing = () => {
     if (!window.confirm("Confirm Cash Received for this table?")) return;
 
     try {
-      // ✅ CLEAN FETCH: Removed ngrok headers
+      
       const res = await fetch(`${BASE_URL}/api/orders/${orderId}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

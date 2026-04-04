@@ -8,15 +8,15 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // 1. Fetch Stats
+      // Fetch Stats
       const statsRes = await fetch("http://127.0.0.1:8000/api/stats/");
       const statsData = await statsRes.json();
       
-      // 2. Fetch Orders for Recent Activity
+      //  Fetch Orders for Recent Activity
       const ordersRes = await fetch("http://127.0.0.1:8000/api/orders/");
       const ordersData = await ordersRes.json();
 
-      // 3. Fetch Menu to check for Low Stock Alerts
+      // Fetch Menu to check for Low Stock Alerts
       const menuRes = await fetch("http://127.0.0.1:8000/api/menu/");
       const menuData = await menuRes.json();
 
@@ -45,13 +45,13 @@ const AdminDashboard = () => {
 
   return (
     <div className="p-8 bg-[#f8fafc] min-h-screen font-sans">
-      {/* 1. HEADER (Button Removed) */}
+      {/*  HEADER (Button Removed) */}
       <div className="mb-10">
         <h1 className="text-3xl font-black text-slate-800 tracking-tight">Dashboard Overview</h1>
         <p className="text-slate-400 font-medium mt-1">Welcome back, Sandhya</p>
       </div>
 
-      {/* 2. STAT CARDS */}
+      {/*  STAT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard icon={<Users className="text-blue-600"/>} label="Total Staff" value={stats.total_staff} />
         <StatCard icon={<Utensils className="text-emerald-500"/>} label="Menu Items" value={stats.total_menu} />
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* 3. RECENT ACTIVITY TABLE */}
+        {/*  RECENT ACTIVITY TABLE */}
         <div className="lg:col-span-2 bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-8 border-b border-slate-50 flex justify-between items-center">
             <h2 className="text-lg font-black text-slate-800 uppercase tracking-tighter">Recent Activity</h2>
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* 4. NEW: INVENTORY ALERT SECTION */}
+        {/*  INVENTORY ALERT SECTION */}
         <div className="bg-slate-900 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
            <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">

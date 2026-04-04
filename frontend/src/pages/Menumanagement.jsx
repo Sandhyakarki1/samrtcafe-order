@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Utensils, Image as ImageIcon, Loader2, Save } from 'lucide-react';
 
-const BASE_URL = "https://wings-paintball-than-yrs.trycloudflare.com";
+const BASE_URL = "https://presence-clarke-collectables-working.trycloudflare.com";
 const API_URL = `${BASE_URL}/api/menu/`;
 
 const MenuManagement = () => {
@@ -17,12 +17,10 @@ const MenuManagement = () => {
 
   const [preview, setPreview] = useState(null); 
  
-  // ✅ CLEAN: Works with any tunnel or production URL
   const getFullImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (typeof imagePath !== 'string') return null;
-    
-    // If it's already a full URL, just clean up any localhost remnants
+
     const cleanPath = imagePath.replace(/^http:\/\/(127\.0\.0\.1|localhost):8000/, "");
     
     if (cleanPath.startsWith('http')) return cleanPath;
@@ -34,7 +32,7 @@ const MenuManagement = () => {
   const fetchMenu = async () => {
     setLoading(true);
     try {
-      // ✅ CLEAN: No ngrok headers needed
+      
       const res = await fetch(API_URL);
       if (res.ok) {
         const data = await res.json();
@@ -77,7 +75,7 @@ const MenuManagement = () => {
       const res = await fetch(url, {
         method: method,
         body: data,
-        // ✅ CLEAN: No ngrok headers needed
+        
       });
 
       if (res.ok) {
@@ -186,11 +184,9 @@ const MenuManagement = () => {
         </table>
         )}
       </div>
-
-      {/* MODAL (Simplified for brevity, keep your existing Modal UI but ensure headers are removed from handleSubmit) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          {/* ... Keep your Modal JSX exactly as it is ... */}
+
         </div>
       )}
     </div>

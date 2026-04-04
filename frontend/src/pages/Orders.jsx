@@ -1,98 +1,279 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, Plus, X, ShoppingCart, Utensils, Archive } from 'lucide-react';
+import { 
+  Clock, CheckCircle, Plus, Minus, X, ShoppingCart, 
+  Utensils, Banknote, ChefHat, Play, Check 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const BASE_URL = "https://wings-paintball-than-yrs.trycloudflare.com";
+
+const BASE_URL = "https://presence-clarke-collectables-working.trycloudflare.com";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Modal State for Manual Orders
   const [tableNumber, setTableNumber] = useState("");
-  const [cart, setCart] = useState([]);
-  const navigate = useNavigate();
+  const [cart, setCart] = useState([]); 
 
   const refreshData = async () => {
     try {
       const orderRes = await fetch(`${BASE_URL}/api/orders/`);
-      const orderData = await orderRes.json();
-      setOrders(orderData.sort((a, b) => b.id - a.id));
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        setOrders(orderData.sort((a, b) => a.id - b.id));
+      }
 
       const menuRes = await fetch(`${BASE_URL}/api/menu/`);
-      setMenuItems(await menuRes.json());
-    } catch (err) { console.error(err); }
+      if (menuRes.ok) {
+        setMenuItems(await menuRes.json());
+      }
+    } catch (err) { console.error("Sync error:", err); }
   };
 
   useEffect(() => {
     refreshData();
-    const interval = setInterval(refreshData, 10000);
+    const interval = setInterval(refreshData, 10000); // 10s Auto-sync
     return () => clearInterval(interval);
   }, []);
 
-  const handleMarkAsServed = async (orderId) => {
-    const res = await fetch(`${BASE_URL}/api/orders/${orderId}/`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "Served" })
-    });
-    if (res.ok) refreshData();
+  // Update Status Logic (Pending -> Preparing -> Ready -> Served -> Paid)
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/orders/${orderId}/status/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) refreshData();
+    } catch (err) {
+      alert("Failed to update status");
+    }
   };
 
+  // --- Modal Cart Logic ---
   const addToCart = (item) => {
     const existing = cart.find(i => i.id === item.id);
     if (existing) {
-      if (existing.qty >= item.stock) return alert("Out of stock!");
-      setCart(cart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
+      if (existing.quantity >= item.stock) return alert("Limit reached!");
+      setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
     } else {
       if (item.stock <= 0) return alert("Out of stock!");
-      setCart([...cart, { ...item, qty: 1, quantity: 1 }]);
+      setCart([...cart, { ...item, quantity: 1, instructions: "" }]);
+    }
+  };
+
+  const removeFromCart = (id) => {
+    const existing = cart.find(i => i.id === id);
+    if (existing.quantity > 1) {
+      setCart(cart.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
+    } else {
+      setCart(cart.filter(i => i.id !== id));
     }
   };
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (!tableNumber || cart.length === 0) return alert("Select table and items!");
+
+    const payload = {
+      table_number: parseInt(tableNumber),
+      items: cart.map(i => ({ id: i.id, qty: i.quantity, instructions: i.instructions || "" }))
+    };
+
     const res = await fetch(`${BASE_URL}/api/place-order/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table_number: parseInt(tableNumber), items: cart.map(i => ({ id: i.id, qty: i.quantity })) })
+      body: JSON.stringify(payload)
     });
-    if (res.ok) { setIsModalOpen(false); setCart([]); setTableNumber(""); refreshData(); }
+
+    if (res.ok) {
+      setIsModalOpen(false);
+      setCart([]);
+      setTableNumber("");
+      refreshData();
+      alert("Order Stored Successfully!");
+    }
   };
 
-  const activeOrders = orders.filter(o => o.status !== 'Served' && o.status !== 'Paid' && o.status !== 'Cancelled');
+  // Filters
+  const liveQueue = orders.filter(o => ['Pending', 'Preparing', 'Ready'].includes(o.status));
+  const servedTables = orders.filter(o => o.status === 'Served');
 
   return (
-    <div className="p-2 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center mb-10">
+    <div className="p-4 animate-in fade-in duration-500 font-sans">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-12">
         <div>
-           <h1 className="text-3xl font-black text-slate-800 tracking-tight">Active Orders</h1>
-           <p className="text-slate-400 font-medium text-sm">Managing {activeOrders.length} tables</p>
+          <h1 className="text-4xl font-black text-slate-800 tracking-tighter">Order Center</h1>
+          <p className="text-slate-400 font-medium mt-1">Supervising {liveQueue.length + servedTables.length} Active Tables</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-xl shadow-indigo-100">+ Manual Order</button>
+        <button 
+          onClick={() => setIsModalOpen(true)} 
+          className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2"
+        >
+          <Plus size={20} /> New Manual Order
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {activeOrders.map(order => (
-          <div key={order.id} className="bg-white p-8 rounded-[40px] shadow-sm border-2 border-slate-50 hover:border-indigo-100 transition-all">
-             <div className="flex justify-between items-start mb-6">
-                <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg">{order.table_number}</div>
-                <div className="text-right">
-                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${order.status === 'Pending' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>{order.status}</span>
-                   <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Order #{order.id}</p>
-                </div>
-             </div>
-             <div className="bg-slate-50 rounded-3xl p-5 mb-6 border border-slate-100 text-sm font-bold text-slate-700 italic leading-relaxed">
-                {order.items_text}
-             </div>
-             <div className="flex justify-between items-center">
-                <div className="text-2xl font-black text-slate-800 tracking-tighter">Rs {order.total_price}</div>
-                <button onClick={() => handleMarkAsServed(order.id)} className="p-3 bg-indigo-50 text-indigo-400 hover:bg-emerald-500 hover:text-white rounded-2xl transition-all shadow-sm active:scale-90"><CheckCircle size={28}/></button>
-             </div>
-          </div>
-        ))}
+      {/* --- KITCHEN / SERVICE QUEUE --- */}
+      <div className="mb-16">
+        <div className="flex items-center gap-3 mb-8">
+           <div className="p-2 bg-orange-100 text-orange-600 rounded-xl"><ChefHat size={20}/></div>
+           <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Kitchen Queue</h2>
+           <span className="bg-slate-200 text-slate-500 px-2 py-0.5 rounded-lg text-[10px] font-black">{liveQueue.length}</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {liveQueue.map(order => (
+            <OrderCard key={order.id} order={order} onUpdate={handleUpdateStatus} isLive={true} />
+          ))}
+          {liveQueue.length === 0 && <div className="col-span-full py-16 text-center border-2 border-dashed rounded-[40px] text-slate-300 font-bold italic">No items in the kitchen queue.</div>}
+        </div>
       </div>
+
+      {/* --- SERVED TABLES  --- */}
+      <div className="pb-20">
+        <div className="flex items-center gap-3 mb-8">
+           <div className="p-2 bg-emerald-100 text-emerald-600 rounded-xl"><Banknote size={20}/></div>
+           <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Served • Waiting for Cash</h2>
+           <span className="bg-slate-200 text-slate-500 px-2 py-0.5 rounded-lg text-[10px] font-black">{servedTables.length}</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {servedTables.map(order => (
+            <OrderCard key={order.id} order={order} onUpdate={handleUpdateStatus} isLive={false} />
+          ))}
+          {servedTables.length === 0 && <div className="col-span-full py-16 text-center border-2 border-dashed rounded-[40px] text-slate-300 font-bold italic">No tables ready for billing.</div>}
+        </div>
+      </div>
+
+      {/* --- MANUAL ORDER MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[40px] w-full max-w-4xl max-h-[90vh] flex shadow-2xl relative overflow-hidden">
+            <button onClick={() => setIsModalOpen(false)} className="absolute right-8 top-8 text-slate-400 hover:text-slate-800 z-20"><X size={28}/></button>
+            
+            {/* Modal Content: Menu Selection */}
+            <div className="flex-[1.5] p-10 overflow-y-auto border-r border-slate-100 bg-white">
+              <h2 className="text-2xl font-black mb-8 italic">Add Items to Table</h2>
+              <div className="grid grid-cols-2 gap-5">
+                {menuItems.map(item => (
+                  <button 
+                    key={item.id} 
+                    onClick={() => addToCart(item)}
+                    disabled={item.stock <= 0}
+                    className={`p-5 rounded-3xl border-2 text-left transition-all ${item.stock <= 0 ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:border-indigo-500 bg-white shadow-sm hover:shadow-md'}`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                       <span className="p-2 bg-slate-50 rounded-xl text-slate-400"><Utensils size={18}/></span>
+                       <span className="font-black text-indigo-600 text-sm">Rs {item.price}</span>
+                    </div>
+                    <div className="font-black text-slate-800 uppercase text-xs tracking-tight">{item.name}</div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Stock: {item.stock}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Sidebar: Checkout */}
+            <div className="flex-1 p-10 bg-slate-50 flex flex-col">
+               <h3 className="text-xl font-black mb-8 flex items-center gap-2"><ShoppingCart size={22}/> CHECKOUT</h3>
+               
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1">Assign Table</label>
+               <select 
+                 className="w-full border-2 p-4 rounded-2xl mb-8 outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-bold text-sm shadow-sm"
+                 value={tableNumber} onChange={e => setTableNumber(e.target.value)}
+               >
+                 <option value="">Select Table...</option>
+                 {[1,2,3,4,5].map(n => <option key={n} value={n}>Table {n}</option>)}
+               </select>
+
+               <div className="flex-1 overflow-y-auto space-y-4 mb-8">
+                 {cart.map(item => (
+                   <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                     <div>
+                        <p className="text-xs font-black text-slate-700 uppercase">{item.name}</p>
+                        <p className="text-[10px] text-indigo-500 font-bold">Rs {item.price * item.quantity}</p>
+                     </div>
+                     <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-xl border">
+                        <button onClick={() => removeFromCart(item.id)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-400 hover:text-red-500">-</button>
+                        <span className="font-black text-xs w-3 text-center">{item.quantity}</span>
+                        <button onClick={() => addToCart(item)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-400 hover:text-green-500">+</button>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+
+               <div className="border-t pt-6">
+                  <div className="flex justify-between items-center mb-6">
+                     <span className="text-[10px] font-black text-slate-400 uppercase">Grand Total</span>
+                     <span className="text-3xl font-black text-slate-800">Rs {cart.reduce((s,i) => s + (i.price * i.quantity), 0)}</span>
+                  </div>
+                  <button onClick={handlePlaceOrder} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black uppercase tracking-widest shadow-2xl hover:bg-black active:scale-95 transition-all">Place Order</button>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+// --- Reusable Order Card ---
+const OrderCard = ({ order, onUpdate, isLive }) => {
+  const getStatusStyle = (s) => {
+    if (s === 'Pending') return 'bg-orange-100 text-orange-600';
+    if (s === 'Preparing') return 'bg-blue-100 text-blue-600';
+    if (s === 'Ready') return 'bg-emerald-100 text-emerald-600';
+    return 'bg-slate-100 text-slate-600';
+  };
+
+  return (
+    <div className={`bg-white p-8 rounded-[45px] shadow-sm border-2 transition-all group ${isLive ? 'border-slate-50 hover:border-indigo-100' : 'border-emerald-50 hover:border-emerald-200 shadow-xl shadow-emerald-50/50'}`}>
+       <div className="flex justify-between items-start mb-6">
+          <div className={`w-14 h-14 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${isLive ? 'bg-slate-900' : 'bg-emerald-500 shadow-emerald-100'}`}>
+            {order.table_number}
+          </div>
+          <div className="text-right">
+             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusStyle(order.status)}`}>
+               {order.status}
+             </span>
+             <p className="text-[10px] text-slate-300 mt-2 font-bold uppercase tracking-widest">Order #{order.id}</p>
+          </div>
+       </div>
+
+       <div className="bg-slate-50 rounded-[28px] p-5 mb-8 border border-slate-100 min-h-[90px]">
+          <p className="text-xs font-bold text-slate-600 leading-relaxed italic">{order.items_text}</p>
+       </div>
+
+       <div className="flex justify-between items-center">
+          <div>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Amount</p>
+            <div className="text-2xl font-black text-slate-800">Rs {order.total_price}</div>
+          </div>
+          
+          <div className="flex gap-2">
+            {order.status === 'Pending' && (
+              <button onClick={() => onUpdate(order.id, 'Preparing')} className="p-4 bg-orange-500 text-white rounded-2xl shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all active:scale-90"><Play size={20} fill="white"/></button>
+            )}
+            {order.status === 'Preparing' && (
+              <button onClick={() => onUpdate(order.id, 'Ready')} className="p-4 bg-blue-500 text-white rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all active:scale-90"><Check size={20}/></button>
+            )}
+            {order.status === 'Ready' && (
+              <button onClick={() => onUpdate(order.id, 'Served')} className="p-4 bg-emerald-500 text-white rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-all active:scale-90">Serve</button>
+            )}
+            {order.status === 'Served' && (
+              <button onClick={() => onUpdate(order.id, 'Paid')} className="px-5 py-3 bg-slate-900 text-white rounded-2xl shadow-lg hover:bg-black transition-all active:scale-95 font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+                <Banknote size={16}/> Settle
+              </button>
+            )}
+          </div>
+       </div>
+    </div>
+  );
+};
+
 export default Orders;
