@@ -13,7 +13,7 @@ export default function StaffLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Ensure this endpoint matches Django urls.py
+      
       const res = await fetch("http://127.0.0.1:8000/api/staff/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -23,7 +23,7 @@ export default function StaffLogin() {
       const data = await res.json();
 
       if (res.ok) {
-        // Save staff info for use in their specific dashboards
+       
         localStorage.setItem("userRole", data.role);
         localStorage.setItem("userName", data.username);
 

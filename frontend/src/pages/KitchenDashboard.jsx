@@ -17,7 +17,7 @@ export default function KitchenDashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus })
     });
-    fetchOrders(); // Refresh list after update
+    fetchOrders(); 
   };
 
   useEffect(() => { 
@@ -31,8 +31,6 @@ export default function KitchenDashboard() {
       <h1 className="text-3xl font-black mb-8 flex items-center gap-3"><ChefHat/> Kitchen Board</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {orders.map(order => {
-          // FEATURE: Detect if there is a note inside the items_text
-          // We look for the "[" bracket we added in the Serializer earlier
           const hasNote = order.items_text.includes("[NOTE:");
 
           return (
@@ -47,7 +45,7 @@ export default function KitchenDashboard() {
                 {order.items_text}
               </p>
 
-              {/* ✅ NEW FEATURE: Highlight Customer Note specifically if it exists */}
+              {/*  Highlight Customer Note specifically if it exists */}
               {hasNote && (
                 <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-start gap-2">
                   <MessageSquare size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
