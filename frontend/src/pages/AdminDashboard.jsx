@@ -8,7 +8,7 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      //  Fetch Stats from your Django API
+      //  Fetch Stats from  Django API
       const statsRes = await fetch("http://127.0.0.1:8000/api/stats/");
       const statsData = await statsRes.json();
       

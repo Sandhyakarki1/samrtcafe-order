@@ -82,7 +82,7 @@ DATABASES = {
 }
 
 # ==================================================
-# CORS & CSRF (CLEANED FOR CLOUDFLARE)
+# CORS & CSRF 
 # ==================================================
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_CREDENTIALS = True
