@@ -50,6 +50,7 @@ class AdminLoginView(APIView):
             user_obj = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        
         user = authenticate(username=user_obj.username, password=password)
         if user is not None:
             user_role = getattr(user.profile, "role", "Staff")
@@ -72,6 +73,53 @@ class StaffLoginView(APIView):
         if user and user.profile.role == role:
             return Response({"message": "Login successful", "username": user.username, "role": user.profile.role})
         return Response({"error": "Invalid credentials"}, status=401)
+
+# ==================================================
+# PASSWORD RECOVERY (GMAIL OTP)
+# ==================================================
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def admin_forgot_password(request):
+    email = request.data.get("email")
+    if not email:
+        return Response({"error": "Email is required"}, status=400)
+    
+    user = get_object_or_404(User, email=email)
+    otp = str(random.randint(100000, 999999))
+    user.profile.otp = otp
+    user.profile.save()
+    
+    try:
+        send_mail(
+            'SmartCafe - Password Reset Code', 
+            f'Your OTP code for password reset is: {otp}', 
+            settings.DEFAULT_FROM_EMAIL, 
+            [email]
+        )
+        return Response({"message": "OTP sent to your Gmail"})
+    except Exception as e:
+        return Response({"error": f"Failed to send email: {str(e)}"}, status=500)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def admin_reset_password(request):
+    email = request.data.get("email")
+    otp = request.data.get("otp")
+    password = request.data.get("password")
+    
+    if not all([email, otp, password]):
+        return Response({"error": "Email, OTP, and New Password are required"}, status=400)
+
+    user = get_object_or_404(User, email=email)
+    
+    if str(user.profile.otp) == str(otp):
+        user.set_password(password) # This hashes the password securely
+        user.profile.otp = None # Clear OTP after use
+        user.profile.save()
+        user.save()
+        return Response({"message": "Password updated successfully!"})
+    
+    return Response({"error": "Invalid OTP"}, status=400)
 
 # ==================================================
 # STAFF & MENU MANAGEMENT
@@ -123,7 +171,7 @@ class MenuItemDetailView(APIView):
         return Response(status=204)
 
 # ==================================================
-# 4. ORDER LOGIC & TABLE CHECK
+# ORDER LOGIC & TABLE CHECK
 # ==================================================
 class CheckTableStatusView(APIView):
     permission_classes = [AllowAny]
@@ -173,10 +221,9 @@ class OrderDetailView(APIView):
         return Response({"error": "Failed"}, status=400)
 
 # ==================================================
-# 5. BILLING & FEEDBACK 
+# BILLING & FEEDBACK 
 # ==================================================
 class SettleBillView(APIView):
-    """ Marks an order as Paid """
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         order.status = 'Paid'
@@ -184,7 +231,6 @@ class SettleBillView(APIView):
         return Response({"message": "Bill settled!"})
 
 class BillDetailView(APIView):
-    """ Shows VAT and Net Amount """
     def get(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         total = float(order.total_price)
@@ -199,28 +245,3 @@ class FeedbackView(APIView):
         order = get_object_or_404(Order, id=request.data.get('order_id'))
         Feedback.objects.create(order=order, rating=request.data.get('rating'), comment=request.data.get('comment'))
         return Response({"message": "Success"}, status=201)
-
-# PASSWORD RECOVERY
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def admin_forgot_password(request):
-    email = request.data.get("email")
-    user = get_object_or_404(User, email=email)
-    otp = str(random.randint(100000, 999999))
-    user.profile.otp = otp
-    user.profile.save()
-    send_mail('SmartCafe OTP', f'Code: {otp}', settings.DEFAULT_FROM_EMAIL, [email])
-    return Response({"message": "OTP sent"})
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def admin_reset_password(request):
-    email, otp, password = request.data.get("email"), request.data.get("otp"), request.data.get("password")
-    user = get_object_or_404(User, email=email)
-    if str(user.profile.otp) == str(otp):
-        user.set_password(password)
-        user.profile.otp = None
-        user.profile.save()
-        user.save()
-        return Response({"message": "Success"})
-    return Response({"error": "Invalid OTP"}, status=400)
