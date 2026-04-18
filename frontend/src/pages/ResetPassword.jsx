@@ -48,7 +48,7 @@ function ResetPassword() {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          readOnly
           className="w-full p-3 mb-4 border rounded"
           required
         />

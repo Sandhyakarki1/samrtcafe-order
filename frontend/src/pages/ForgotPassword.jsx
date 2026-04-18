@@ -1,54 +1,96 @@
-
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false); // New: Loading state
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  // CHANGE THIS to your Cloudflare link during the Viva
+  const API_BASE_URL = "http://127.0.0.1:8000"; 
 
   const handleSendOTP = async () => {
     setMessage("");
     setError("");
 
     if (!email) {
-      setError("Email is required");
+      setError("Please enter your registered email address.");
       return;
     }
 
-    try {
-      const res = await axios.post("http://127.0.0.1:8000/api/admin/forgot-password/", { email });
-      setMessage(res.data.message);
+    setLoading(true); // Start loading
 
-      // Redirect to Reset Password page with email
-      navigate("/admin/reset-password", { state: { email } });
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/admin/forgot-password/`, { email });
+      
+      setMessage(res.data.message);
+      
+      // Delay navigation slightly so user can see the success message
+      setTimeout(() => {
+        navigate("/admin/reset-password", { state: { email } });
+      }, 1500);
+
     } catch (err) {
-      setError(err.response?.data?.error || "Error sending OTP");
+      const errorMsg = err.response?.data?.error || "Failed to connect to server.";
+      setError(errorMsg);
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white p-10 rounded shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">Forgot Password</h1>
-        {message && <p className="text-green-500 mb-4">{message}</p>}
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <input
-          type="email"
-          placeholder="Enter your admin email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 mb-6 border rounded"
-          required
-        />
-        <button
-          onClick={handleSendOTP}
-          className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600"
-        >
-          Send OTP
-        </button>
+    <div className="flex justify-center items-center h-screen bg-gray-50">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-800">Forgot Password?</h1>
+          <p className="text-gray-500 mt-2">Enter your email to receive a 6-digit OTP code.</p>
+        </div>
+
+        {message && (
+          <div className="bg-green-100 text-green-700 p-3 rounded-lg mb-4 text-sm text-center">
+            ✅ {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm text-center">
+            ❌ {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Email</label>
+            <input
+              type="email"
+              placeholder="e.g. admin@smartcafe.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              required
+            />
+          </div>
+
+          <button
+            onClick={handleSendOTP}
+            disabled={loading}
+            className={`w-full text-white font-bold p-3 rounded-lg transition-all ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-md"
+            }`}
+          >
+            {loading ? "Sending OTP..." : "Send Reset Code"}
+          </button>
+
+          <button
+            onClick={() => navigate("/login")}
+            className="w-full text-gray-500 text-sm hover:underline mt-2"
+          >
+            Back to Login
+          </button>
+        </div>
       </div>
     </div>
   );
