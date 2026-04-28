@@ -33,7 +33,7 @@ def admin_dashboard_stats(request):
         "total_orders": Order.objects.count(),
         "pending_orders": Order.objects.filter(status='Pending').count(),
         "total_menu": MenuItem.objects.count(),
-        "total_staff": User.objects.filter(is_superuser=False).count(),
+        "total_staff": User.objects.filter(is_superuser=False, is_active=True).count(),
         "active_tables": Order.objects.exclude(status__in=['Paid', 'Cancelled']).values('table_number').distinct().count()
     })
 
@@ -126,8 +126,9 @@ def admin_reset_password(request):
 # ==================================================
 class StaffManagementView(APIView):
     def get(self, request):
-        staff = User.objects.filter(is_superuser=False)
+        staff = User.objects.filter(is_superuser=False).order_by('-is_active', 'username')
         return Response(UserSerializer(staff, many=True).data)
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -143,9 +144,21 @@ class StaffDetailView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+    def patch(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        if 'is_active' in request.data:
+            user.is_active = request.data['is_active']
+            user.save()
+            status_text = "activated" if user.is_active else "deactivated"
+            return Response({"message": f"Staff member {status_text} successfully"})
+        return Response({"error": "No status provided"}, status=400)
+
     def delete(self, request, pk):
-        get_object_or_404(User, pk=pk).delete()
-        return Response(status=204)
+        user = get_object_or_404(User, pk=pk)
+        user.is_active = False
+        user.save()
+        return Response({"message": "Staff member deactivated (Soft Delete)"}, status=200)
 
 class MenuManagementView(APIView):
     def get(self, request):

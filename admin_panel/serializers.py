@@ -7,39 +7,49 @@ class UserSerializer(serializers.ModelSerializer):
     assigned_role = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'password', 'role', 'assigned_role']
-        extra_kwargs = {
-            'password': {'write_only': True, 'required': False} 
-        }
+      model = User
+      
+      fields = ['id', 'username', 'email', 'password', 'role', 'assigned_role', 'is_active']
+      extra_kwargs = {
+        'password': {'write_only': True, 'required': False} 
+    }
 
     def get_assigned_role(self, obj):
-        return getattr(obj.profile, 'role', 'Waiter')
+     return getattr(obj.profile, 'role', 'Waiter')
 
     def create(self, validated_data):
-        role_data = validated_data.pop('role', 'Waiter')
-        password = validated_data.pop('password')
-        user = User.objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
-        profile, _ = Profile.objects.get_or_create(user=user)
-        profile.role = role_data
-        profile.save()
-        return user
+       role_data = validated_data.pop('role', 'Waiter')
+       password = validated_data.pop('password')
+       is_active = validated_data.pop('is_active', True)
+       
+       user = User.objects.create_user(**validated_data)
+       user.set_password(password)
+       user.is_active = is_active 
+       user.save()
+       profile, _ = Profile.objects.get_or_create(user=user)
+       profile.role = role_data
+       profile.save()
+       return user
 
     def update(self, instance, validated_data):
         role_data = validated_data.pop('role', None)
         password = validated_data.pop('password', None)
+        
+       
+        if 'is_active' in validated_data:
+            instance.is_active = validated_data.get('is_active', instance.is_active)
+        
+
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
         if password:
             instance.set_password(password)
         instance.save()
         if role_data:
-            profile, _ = Profile.objects.get_or_create(user=instance)
-            profile.role = role_data
-            profile.save()
-        return instance
+           profile, _ = Profile.objects.get_or_create(user=instance)
+           profile.role = role_data
+           profile.save()
+        return instance 
 
 class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
