@@ -5,7 +5,7 @@ from .views import (
     StaffManagementView, StaffDetailView,
     MenuManagementView, MenuItemDetailView,
     OrderListView, OrderDetailView, PlaceOrderView, 
-    FeedbackView, SettleBillView, BillDetailView, 
+    KhaltiVerifyView,FeedbackView, SettleBillView, BillDetailView, 
     CheckTableStatusView, 
 )
 
@@ -45,4 +45,7 @@ urlpatterns = [
     path('feedback/', FeedbackView.as_view(), name='feedback_api'),
     path('orders/<int:pk>/settle/', SettleBillView.as_view(), name='settle_bill'),
     path('orders/<int:pk>/bill-details/', BillDetailView.as_view(), name='bill_details'),
+
+        path('api/place-order/', PlaceOrderView.as_view(), name='place-order'),
+    path('api/khalti/verify/', KhaltiVerifyView.as_view(), name='khalti-verify'),
 ]

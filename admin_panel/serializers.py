@@ -68,7 +68,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'table_number', 'status', 'total_price', 'items', 'items_text', 'created_at']
+        fields = ['id', 'table_number', 'status', 'total_price','payment_method', 'items', 'items_text', 'created_at']
 
     def get_items_text(self, obj):
         order_items = obj.items.all()
