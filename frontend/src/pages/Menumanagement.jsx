@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Utensils, Image as ImageIcon, Loader2, Save, Check } from 'lucide-react';
 
 
-const BASE_URL = "https://groundwater-baking-timing-scsi.trycloudflare.com";
+const BASE_URL = "https://sorry-moves-characters-genres.trycloudflare.com";
 const API_URL = `${BASE_URL}/api/menu/`;
 
 const MenuManagement = () => {
