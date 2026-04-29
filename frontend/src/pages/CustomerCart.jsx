@@ -33,8 +33,11 @@ export default function CustomerCart() {
 
   const total = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
-  // --- KHALTI LOGIC ---
+
   const handleKhaltiPayment = (orderId, amount) => {
+  
+    const khaltiPaisa = Math.round(amount * 100);
+
     const config = {
       "publicKey": "test_public_key_dc74e543469e40608040b284e3630f57",
       "productIdentity": orderId.toString(),
@@ -43,17 +46,21 @@ export default function CustomerCart() {
       "paymentPreference": ["KHALTI", "EBANKING", "MOBILE_BANKING", "CONNECT_IPS"],
       "eventHandler": {
         onSuccess(payload) {
+          console.log("Khalti Success:", payload);
           verifyPaymentOnBackend(payload, orderId);
         },
         onError(error) {
-          alert("Khalti Payment Failed.");
+          console.error("Khalti Error:", error);
+          alert("Khalti Payment Failed. Please check your credentials.");
           setLoading(false);
         },
-        onClose() { setLoading(false); }
+        onClose() { 
+            setLoading(false); 
+        }
       }
     };
     const checkout = new window.KhaltiCheckout(config);
-    checkout.show({ amount: amount * 100 });
+    checkout.show({ amount: khaltiPaisa });
   };
 
   const verifyPaymentOnBackend = async (payload, orderId) => {
@@ -61,14 +68,23 @@ export default function CustomerCart() {
       const response = await fetch(`${BASE_URL}/api/khalti/verify/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: payload.token, amount: payload.amount, order_id: orderId })
+        body: JSON.stringify({ 
+            token: payload.token, 
+            amount: payload.amount, 
+            order_id: orderId 
+        })
       });
       if (response.ok) {
         localStorage.removeItem("cart");
         navigate(`/track/${orderId}`);
+      } else {
+          alert("Server failed to verify payment. Please show your Khalti receipt to staff.");
       }
-    } catch (error) { alert("Error verifying payment."); }
-    finally { setLoading(false); }
+    } catch (error) { 
+        alert("Connection to server lost during verification."); 
+    } finally { 
+        setLoading(false); 
+    }
   };
 
   // --- COMBINED CHECKOUT LOGIC ---
@@ -78,7 +94,7 @@ export default function CustomerCart() {
 
     const orderData = {
       table_number: parseInt(table),
-      payment_method: method, // Sends 'khalti' or 'cash'
+      payment_method: method, 
       items: cart.map(item => ({
         id: item.id,
         qty: item.quantity || 1,
@@ -101,17 +117,17 @@ export default function CustomerCart() {
         if (method === 'khalti') {
           handleKhaltiPayment(orderId, total);
         } else {
-          
+          // Cash logic
           localStorage.removeItem("cart");
-          alert("Order Placed! Please pay Rs. " + total + " at the counter.");
+          alert("Order Placed! Please pay Rs. " + total + " at the counter after eating.");
           navigate(`/track/${orderId}`);
         }
       } else {
-        alert("Order failed.");
+        alert("Order failed: " + (data.error || "Internal Error"));
         setLoading(false);
       }
     } catch (error) {
-      alert("Server connection failed.");
+      alert("Backend server connection failed.");
       setLoading(false);
     }
   };
@@ -135,7 +151,7 @@ export default function CustomerCart() {
            <div className="bg-white/10 p-4 rounded-2xl border border-white/10"><ShoppingBag size={28} /></div>
         </div>
 
-        {/* Cart Items */}
+        {/* Cart Items List */}
         <div className="space-y-4 mb-10">
           {cart.map(item => (
             <div key={item.id} className="bg-white rounded-[35px] p-5 shadow-sm border border-white flex flex-col gap-4">
@@ -158,16 +174,19 @@ export default function CustomerCart() {
           ))}
         </div>
 
-        {/* Total & Action Buttons */}
+        {/* Payment Summary & Buttons */}
         {cart.length > 0 && (
           <div className="bg-white p-8 rounded-[45px] shadow-2xl border border-white">
             <div className="flex justify-between items-center mb-8 text-left">
-              <div><p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Bill</p><h2 className="text-4xl font-black text-slate-900 tracking-tighter text-left">Rs. {total}</h2></div>
+              <div>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Bill</p>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tighter text-left">Rs. {total}</h2>
+              </div>
               <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl"><CreditCard size={32}/></div>
             </div>
             
             <div className="flex flex-col gap-3">
-                {/* PRIMARY BUTTON: KHALTI */}
+                {/* PRIMARY: KHALTI */}
                 <button 
                 onClick={() => processCheckout('khalti')} 
                 disabled={loading} 
@@ -175,12 +194,12 @@ export default function CustomerCart() {
                 >
                 <div className="flex items-center gap-2">
                     <ShieldCheck size={18} />
-                    <span>{loading ? "PROCESSING..." : "Pay with Khalti"}</span>
+                    <span>{loading ? "CHECKING OUT..." : "Pay with Khalti"}</span>
                 </div>
-                {!loading && <span className="text-[10px] opacity-60 font-medium">Digital Secure Payment</span>}
+                {!loading && <span className="text-[10px] opacity-60 font-medium">Fast Digital Payment</span>}
                 </button>
 
-                {/* SECONDARY BUTTON: CASH */}
+                {/* SECONDARY: CASH */}
                 <button 
                 onClick={() => processCheckout('cash')} 
                 disabled={loading} 
