@@ -1,4 +1,5 @@
 import random
+import requests
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -191,25 +192,53 @@ class CheckTableStatusView(APIView):
     def get(self, request, table_id):
         occupied = Order.objects.filter(table_number=table_id).exclude(status__in=['Paid', 'Cancelled']).exists()
         return Response({"occupied": occupied})
+    
 
 class PlaceOrderView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request):
         data = request.data
         try:
             with transaction.atomic():
-                order = Order.objects.create(table_number=data['table_number'])
+                payment_method = data.get('payment_method', 'cash')
+
+        
+                order = Order.objects.create(
+                    table_number=data['table_number'],
+                    payment_method=payment_method,  
+                    status='Pending'               
+                )
+
                 total = 0
                 for item_data in data['items']:
                     menu_item = MenuItem.objects.get(id=item_data['id'])
                     note = item_data.get('instructions', "")
-                    OrderItem.objects.create(order=order, menu_item=menu_item, quantity=item_data['qty'], price=menu_item.price, instructions=note)
+                    
+                    OrderItem.objects.create(
+                        order=order, 
+                        menu_item=menu_item, 
+                        quantity=item_data['qty'], 
+                        price=menu_item.price, 
+                        instructions=note
+                    )
+                    
                     total += (menu_item.price * item_data['qty'])
                 order.total_price = total
                 order.save()
-                return Response({"message": "Order placed!", "order_id": order.id}, status=201)
+
+                return Response({
+                    "message": "Order placed successfully!", 
+                    "order_id": order.id,
+                    "payment_method": order.payment_method
+                }, status=201)
+
+        except MenuItem.DoesNotExist:
+            return Response({"error": "One or more items in your cart no longer exist."}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
 
 class OrderListView(APIView):
     def get(self, request):
@@ -232,6 +261,41 @@ class OrderDetailView(APIView):
             order.save()
             return Response({"message": "Updated"})
         return Response({"error": "Failed"}, status=400)
+
+class KhaltiVerifyView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get("token")
+        amount = request.data.get("amount") 
+        order_id = request.data.get("order_id")
+
+        # Khalti API URL
+        url = "https://khalti.com/api/v2/payment/verify/"
+        
+        payload = {
+            "token": token,
+            "amount": amount
+        }
+        headers = {
+            # Use the Universal Test Secret Key
+            "Authorization": "Key test_secret_key_f59c8ad03f3445c2a118310d5104a0d3"
+        }
+
+        #  Contact Khalti Server
+        response = requests.post(url, payload, headers=headers)
+
+        if response.status_code == 200:
+            #  Payment is Valid! Update Order Status
+            order = Order.objects.get(id=order_id)
+            order.status = 'Paid'
+            order.payment_method = 'Khalti'
+            order.save()
+            return Response({"message": "Payment Verified"}, status=200)
+        else:
+            # Payment Failed or Fake
+            return Response({"error": "Khalti Verification Failed"}, status=400)
+
 
 # ==================================================
 # BILLING & FEEDBACK 
