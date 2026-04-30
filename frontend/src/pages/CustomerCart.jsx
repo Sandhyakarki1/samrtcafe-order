@@ -204,7 +204,7 @@ export default function CustomerCart() {
                 <button 
                 onClick={() => processCheckout('khalti')} 
                 disabled={loading} 
-                className="w-full bg-[#5C2D91] text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#4a2475] transition-all active:scale-95 disabled:bg-slate-200 flex flex-col items-center justify-center gap-1 text-sm"
+                className="w-full bg-red-600 text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#4a2475] transition-all active:scale-95 disabled:bg-slate-200 flex flex-col items-center justify-center gap-1 text-sm"
                 >
                     <div className="flex items-center gap-2">
                         <ShieldCheck size={18} />
