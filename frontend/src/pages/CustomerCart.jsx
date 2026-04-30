@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard, MessageSquare, Plus, Minus, ShieldCheck, Banknote } from "lucide-react";
 
-const BASE_URL = "https://sorry-moves-characters-genres.trycloudflare.com";
+const BASE_URL = "https://bless-volleyball-metals-decimal.trycloudflare.com ";
 
 export default function CustomerCart() {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, DollarSign, Printer, Receipt, Search, CreditCard, Banknote } from 'lucide-react';
 
 
-const BASE_URL = "https://sorry-moves-characters-genres.trycloudflare.com";
+const BASE_URL = "https://bless-volleyball-metals-decimal.trycloudflare.com ";
 
 const Billing = () => {
   const [orders, setOrders] = useState([]);
