@@ -10,7 +10,7 @@ function ForgotPassword() {
   const navigate = useNavigate();
 
   // CHANGE THIS to your Cloudflare link during the Viva
-  const API_BASE_URL = "https://bless-volleyball-metals-decimal.trycloudflare.com"; 
+  const API_BASE_URL = "https://approx-processors-window-boys.trycloudflare.com"; 
 
   const handleSendOTP = async () => {
     setMessage("");
