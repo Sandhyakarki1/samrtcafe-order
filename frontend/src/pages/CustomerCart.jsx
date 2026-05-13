@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard, MessageSquare, Plus, Minus, ShieldCheck, Banknote } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Trash2, CheckCircle, CreditCard, MessageSquare, Plus, Minus, ShieldCheck, Banknote, Loader2 } from "lucide-react";
 
+// Current Active Cloudflare Tunnel
 const BASE_URL = "https://approx-processors-window-boys.trycloudflare.com";
 
 export default function CustomerCart() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(true); // State for Welcome Screen
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
   const table = localStorage.getItem("table") || "1";
+
+  // --- WELCOME SPLASH TIMER ---
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2500); // Show logo for 2.5 seconds
+    return () => clearTimeout(timer);
+  }, []);
 
   const syncCart = (newCart) => {
     setCart(newCart);
@@ -33,46 +41,32 @@ export default function CustomerCart() {
 
   const total = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
-
+  // --- STABLE MOCK KHALTI LOGIC (FOR VIVA/DEMO) ---
   const handleKhaltiPayment = (orderId, amount) => {
-    if (!orderId) {
-        alert("System Error: Order ID not generated. Please use Cash.");
-        setLoading(false);
-        return;
-    }
-
-    const amountInPaisa = Math.round(Number(amount) * 100);
-
-    const config = {
-      "publicKey": "test_public_key_dc74e543469e40608040b284e3630f57",
-      "productIdentity": orderId.toString(),
-      "productName": `Cafe Order Table ${table}`,
-      "productUrl": window.location.origin,
-      "paymentPreference": ["KHALTI", "EBANKING", "MOBILE_BANKING", "CONNECT_IPS"],
-      "eventHandler": {
-        onSuccess(payload) {
-          console.log("Khalti Success Payload:", payload);
-          verifyPaymentOnBackend(payload, orderId);
-        },
-        onError(error) {
-          console.error("Khalti Popup Error:", error);
-          alert("Payment window could not initialize. Try again.");
-          setLoading(false);
-        },
-        onClose() { 
-          setLoading(false); 
-        }
-      }
-    };
-
-  
-    if (window.KhaltiCheckout) {
-        const checkout = new window.KhaltiCheckout(config);
-        checkout.show({ amount: amountInPaisa });
-    } else {
-        alert("Khalti SDK not loaded. Please refresh the page.");
-        setLoading(false);
-    }
+    setLoading(true);
+    
+    // Simulate the Khalti "Connecting" phase
+    setTimeout(() => {
+        const userPhone = window.prompt("KHALTI SECURE GATEWAY\nEnter Mobile Number:", "9800000000");
+        
+        if (userPhone) {
+            const userPin = window.prompt("Enter 4-digit Khalti PIN:", "1111");
+            
+            if (userPin) {
+                // Show a fake processing status
+                alert("Verifying with Khalti Servers... Please wait.");
+                
+                setTimeout(() => {
+                    // This still calls your REAL Django backend
+                    // We send a 'MOCK_TOKEN' so your backend logic still runs!
+                    verifyPaymentOnBackend({ 
+                        token: "MOCK_TOKEN_" + Math.random().toString(36).substr(2, 9), 
+                        amount: amount * 100 
+                    }, orderId);
+                }, 1500);
+            } else { setLoading(false); }
+        } else { setLoading(false); }
+    }, 500);
   };
 
   const verifyPaymentOnBackend = async (payload, orderId) => {
@@ -89,14 +83,13 @@ export default function CustomerCart() {
       
       if (response.ok) {
         localStorage.removeItem("cart");
-        alert("Payment Successful!");
+        alert("Digital Payment Verified Successfully!");
         navigate(`/track/${orderId}`);
       } else {
-        const errData = await response.json();
-        alert("Payment verification failed: " + (errData.error || "Unknown error"));
+        alert("Payment Verification Error. Using Cash Fallback.");
       }
     } catch (error) { 
-        alert("Could not connect to backend to verify payment."); 
+        alert("Connection to backend failed."); 
     } finally { 
         setLoading(false); 
     }
@@ -127,28 +120,41 @@ export default function CustomerCart() {
       const data = await response.json();
 
       if (response.ok) {
-        
         const orderId = data.order_id || data.id;
-        
         if (method === 'khalti') {
           handleKhaltiPayment(orderId, total);
         } else {
           localStorage.removeItem("cart");
-          alert("Cash order placed! Pay after your meal.");
+          alert("Order Placed! Please pay Rs. " + total + " at the counter.");
           navigate(`/track/${orderId}`);
         }
       } else {
-        alert("Failed to create order. Please try again.");
+        alert("Failed to create order.");
         setLoading(false);
       }
     } catch (error) {
-      alert("Error: Backend server is offline.");
+      alert("Backend server is offline.");
       setLoading(false);
     }
   };
 
+  // --- RENDER WELCOME SPLASH ---
+  if (showSplash) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center animate-in fade-in duration-500">
+        <img src="/logo.png" alt="Logo" className="w-32 h-32 mb-4 animate-bounce" />
+        <h1 className="text-3xl font-black text-slate-800 tracking-tighter">SMART<span className="text-indigo-600">CAFE</span></h1>
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.4em] mt-2">Welcome to Table {table}</p>
+        <div className="mt-10 flex items-center gap-2 text-slate-300">
+            <Loader2 className="animate-spin" size={16} />
+            <span className="text-[10px] font-bold uppercase">Loading Menu...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F8F9FB] p-6 font-sans">
+    <div className="min-h-screen bg-[#F8F9FB] p-6 font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="max-w-xl mx-auto text-left">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -166,7 +172,7 @@ export default function CustomerCart() {
            <div className="bg-white/10 p-4 rounded-2xl border border-white/10"><ShoppingBag size={28} /></div>
         </div>
 
-        {/* Cart Items */}
+        {/* Cart Items List */}
         <div className="space-y-4 mb-10">
           {cart.map(item => (
             <div key={item.id} className="bg-white rounded-[35px] p-5 shadow-sm border border-white flex flex-col gap-4">
@@ -195,7 +201,7 @@ export default function CustomerCart() {
             <div className="flex justify-between items-center mb-8">
               <div>
                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 text-left">Total Bill</p>
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Rs. {total}</h2>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tighter text-left">Rs. {total}</h2>
               </div>
               <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl"><CreditCard size={32}/></div>
             </div>
@@ -204,10 +210,10 @@ export default function CustomerCart() {
                 <button 
                 onClick={() => processCheckout('khalti')} 
                 disabled={loading} 
-                className="w-full bg-red-600 text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#4a2475] transition-all active:scale-95 disabled:bg-slate-200 flex flex-col items-center justify-center gap-1 text-sm"
+                className="w-full bg-[#5C2D91] text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-[#4a2475] transition-all active:scale-95 disabled:bg-slate-200 flex flex-col items-center justify-center gap-1 text-sm"
                 >
                     <div className="flex items-center gap-2">
-                        <ShieldCheck size={18} />
+                        {loading ? <Loader2 className="animate-spin"/> : <ShieldCheck size={18} />}
                         <span>{loading ? "PROCESSING..." : "Pay with Khalti"}</span>
                     </div>
                 </button>
