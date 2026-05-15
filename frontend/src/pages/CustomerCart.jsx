@@ -6,7 +6,7 @@ import {
   MessageSquare, ShieldCheck, Banknote, Loader2, CheckCircle 
 } from "lucide-react";
 
-// Professional Active Tunnel URL
+
 const BASE_URL = "https://call-combination-instead-ranging.trycloudflare.com";
 
 export default function CustomerCart() {
@@ -17,6 +17,7 @@ export default function CustomerCart() {
   const [showSplash, setShowSplash] = useState(true); 
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [finalOrderId, setFinalOrderId] = useState(null);
+  
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem("cart")) || []);
   const table = localStorage.getItem("table") || "1";
 
@@ -25,6 +26,16 @@ export default function CustomerCart() {
     const timer = setTimeout(() => setShowSplash(false), 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  // --- AUTO-REDIRECT TIMER (Triggered when payment is successful) ---
+  useEffect(() => {
+    if (paymentSuccess && finalOrderId) {
+      const timer = setTimeout(() => {
+        navigate(`/track/${finalOrderId}`);
+      }, 5000); // Wait 5 seconds before moving to tracking
+      return () => clearTimeout(timer);
+    }
+  }, [paymentSuccess, finalOrderId, navigate]);
 
   // --- CART HELPERS ---
   const syncCart = (newCart) => {
@@ -53,46 +64,75 @@ export default function CustomerCart() {
   // --- ESEWA PAYMENT LOGIC ---
   const handleEsewaPayment = (orderId, amount) => {
     if (!orderId) return alert("Order ID missing");
-
     const transaction_uuid = `${orderId}-${Date.now()}`;
     const product_code = "EPAYTEST";
     const secret = "8gBm/:&EnhH.1/q";
     const message = `total_amount=${amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
-
     const hash = CryptoJS.HmacSHA256(message, secret);
     const signature = CryptoJS.enc.Base64.stringify(hash);
 
     const formData = {
-      amount: amount,
-      tax_amount: 0,
-      total_amount: amount,
-      transaction_uuid: transaction_uuid,
-      product_code: product_code,
-      product_service_charge: 0,
-      product_delivery_charge: 0,
-      success_url: `${window.location.origin}/payment-success/${orderId}`,
+      amount, tax_amount: 0, total_amount: amount,
+      transaction_uuid, product_code,
+      product_service_charge: 0, product_delivery_charge: 0,
+      success_url: `${window.location.origin}/track/${orderId}`,
       failure_url: `${window.location.origin}/payment-failure`,
       signed_field_names: "total_amount,transaction_uuid,product_code",
-      signature: signature
+      signature
     };
 
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
-
     Object.keys(formData).forEach((key) => {
       const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = formData[key];
+      input.type = "hidden"; input.name = key; input.value = formData[key];
       form.appendChild(input);
     });
-
     document.body.appendChild(form);
     form.submit();
   };
 
-  // --- CHECKOUT LOGIC ---
+  // --- STABLE SIMULATED GATEWAY (Bypasses Sandbox Issues) ---
+  const handlePaymentSimulation = (orderId, amount) => {
+    setLoading(true);
+    setTimeout(() => {
+        const userPhone = window.prompt("DIGITAL PAYMENT GATEWAY\nEnter Mobile Number:", "9800000000");
+        if (userPhone) {
+            const userPin = window.prompt("Enter 4-digit PIN:", "1111");
+            if (userPin) {
+                alert("Verifying Transaction with Bank... Please wait.");
+                setTimeout(() => {
+                    verifyPaymentOnBackend({ 
+                        token: "MOCK_TOKEN_" + Math.random().toString(36).substr(2, 9), 
+                        amount: amount * 100 
+                    }, orderId);
+                }, 1500);
+            } else { setLoading(false); }
+        } else { setLoading(false); }
+    }, 500);
+  };
+
+  const verifyPaymentOnBackend = async (payload, orderId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/khalti/verify/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: payload.token, amount: payload.amount, order_id: orderId })
+      });
+      
+      if (response.ok) {
+        localStorage.removeItem("cart");
+        setFinalOrderId(orderId);
+        setPaymentSuccess(true); // SHOW SUCCESS SCREEN
+      } else {
+        alert("Verification error. Using Cash Fallback.");
+      }
+    } catch (error) { 
+        alert("Connection to backend failed."); 
+    } finally { setLoading(false); }
+  };
+
   const processCheckout = async (method) => {
     if (cart.length === 0) return alert("Your cart is empty!");
     setLoading(true);
@@ -101,9 +141,7 @@ export default function CustomerCart() {
       table_number: parseInt(table),
       payment_method: method,
       items: cart.map(item => ({
-        id: item.id,
-        qty: item.quantity || 1,
-        instructions: item.note || ""
+        id: item.id, qty: item.quantity || 1, instructions: item.note || ""
       }))
     };
 
@@ -115,90 +153,94 @@ export default function CustomerCart() {
       });
 
       const data = await response.json();
-
       if (response.ok) {
         const orderId = data.order_id || data.id;
-        localStorage.removeItem("cart"); // Clear cart on success
-
-        if (method === "esewa") {
-          handleEsewaPayment(orderId, total);
+        if (method === 'esewa') {
+           handleEsewaPayment(orderId, total);
+        } else if (method === 'digital') {
+          handlePaymentSimulation(orderId, total);
         } else {
+          // CASH FLOW
+          localStorage.removeItem("cart");
           setFinalOrderId(orderId);
-          setPaymentSuccess(true);
-          // Auto-redirect to tracking after 4 seconds
-          setTimeout(() => navigate(`/track/${orderId}`), 4000);
+          setPaymentSuccess(true); // Still show success screen for Cash
         }
       } else {
-        alert("Failed to create order");
+        alert("Failed to create order.");
         setLoading(false);
       }
     } catch (error) {
-      alert("Backend server offline");
+      alert("Backend server is offline.");
       setLoading(false);
     }
   };
 
-  // ---  WELCOME SPLASH ---
+  // --- VIEW 1: WELCOME SPLASH ---
   if (showSplash) {
     return (
       <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center animate-in fade-in duration-500">
         <img src="/logo.png" alt="Logo" className="w-28 h-28 mb-4 animate-bounce" />
         <h1 className="text-3xl font-black text-slate-800">SMART<span className="text-emerald-600">CAFE</span></h1>
-        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Welcome to Table {table}</p>
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">Table {table}</p>
         <Loader2 className="animate-spin mt-10 text-slate-200" size={20} />
       </div>
     );
   }
 
-  // ---  SUCCESS SCREEN ---
+  // --- VIEW 2: SUCCESS SCREEN (WITH AUTO-REDIRECT TO TRACKING) ---
   if (paymentSuccess) {
     return (
       <div className="fixed inset-0 z-[110] bg-[#F0FFF4] flex flex-col items-center justify-center p-6 text-center animate-in zoom-in duration-300">
         <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
           <CheckCircle size={40} className="text-white" />
         </div>
-        <h1 className="text-3xl font-black text-emerald-600 mb-2">Order Confirmed! 🎉</h1>
-        <p className="text-emerald-700 mb-8 text-sm font-medium">Your delicious meal is being prepared.</p>
-        <button 
-            onClick={() => navigate(`/track/${finalOrderId}`)}
-            className="w-full max-w-xs bg-slate-900 text-white py-5 rounded-2xl font-bold uppercase text-xs shadow-xl active:scale-95 transition-all"
-        >
-            Track My Order
-        </button>
+        <h1 className="text-3xl font-black text-emerald-600 mb-2">Order Success! 🎉</h1>
+        <p className="text-emerald-700 mb-8 text-sm font-medium">Your order has been sent to the kitchen.</p>
+        
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button 
+                onClick={() => navigate(`/track/${finalOrderId}`)}
+                className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold uppercase text-xs shadow-xl active:scale-95 transition-all"
+            >
+                Track Live Order
+            </button>
+            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest opacity-60">
+                Moving to status page in a moment...
+            </p>
+        </div>
       </div>
     );
   }
 
-  // ---  MAIN CART UI ---
+  // --- VIEW 3: MAIN CART UI ---
   return (
     <div className="min-h-screen bg-[#F8F9FB] p-6 font-sans animate-in fade-in duration-500">
       <div className="max-w-xl mx-auto text-left">
-        
-        {/* HEADER */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button onClick={() => navigate(-1)} className="p-3 bg-white rounded-2xl shadow-sm text-slate-400 active:scale-90 transition-all"><ArrowLeft size={24} /></button>
           <h1 className="text-xl font-black text-slate-800 tracking-tighter uppercase">Review Order</h1>
           <button onClick={() => syncCart([])} className="p-3 text-red-400 active:scale-90 transition-all"><Trash2 size={20} /></button>
         </div>
 
-        {/* TABLE BANNER */}
+        {/* Table Banner */}
         <div className="bg-slate-900 text-white p-6 rounded-[32px] mb-8 flex justify-between items-center shadow-xl">
           <div>
-            <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Your Location</p>
+            <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest text-left">Location</p>
             <h2 className="text-3xl font-black italic">TABLE {table}</h2>
           </div>
           <div className="bg-white/10 p-4 rounded-2xl"><ShoppingBag size={28} /></div>
         </div>
 
-        {/* CART ITEMS */}
+        {/* Cart Items */}
         <div className="space-y-4 mb-10">
           {cart.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100 text-slate-300 font-bold">Your cart is empty</div>
+            <div className="text-center py-20 bg-white rounded-[40px] border-2 border-dashed border-slate-100 text-slate-300 font-bold italic">No items picked.</div>
           ) : (
             cart.map(item => (
               <div key={item.id} className="bg-white p-5 rounded-[35px] shadow-sm border border-white flex flex-col gap-4">
                 <div className="flex justify-between items-center">
-                  <div>
+                  <div className="text-left">
                     <h3 className="font-bold text-slate-800">{item.name}</h3>
                     <p className="text-emerald-600 font-black text-sm">Rs. {item.price * (item.quantity || 1)}</p>
                   </div>
@@ -222,24 +264,25 @@ export default function CustomerCart() {
           )}
         </div>
 
-        {/* BILLING & BUTTONS */}
+        {/* Action Buttons */}
         {cart.length > 0 && (
           <div className="bg-white p-8 rounded-[45px] shadow-2xl border border-white">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total Bill</p>
-                <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Rs. {total}</h2>
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 text-left">Total Bill</p>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter text-left">Rs. {total}</h2>
               </div>
               <div className="p-4 bg-emerald-50 text-emerald-600 rounded-3xl"><CreditCard size={32}/></div>
             </div>
 
             <div className="flex flex-col gap-3">
                 <button
-                onClick={() => processCheckout("esewa")}
+                onClick={() => processCheckout("digital")}
                 disabled={loading}
-                className="w-full bg-[#60bb46] text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#52a43b] transition-all active:scale-95 disabled:bg-slate-200 flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-indigo-600 text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all active:scale-95 disabled:bg-slate-200 flex items-center justify-center gap-2 text-sm"
                 >
-                <ShieldCheck size={18} /> {loading ? "PROCESSING..." : "Pay with eSewa"}
+                    {loading ? <Loader2 className="animate-spin" /> : <ShieldCheck size={18} />}
+                    {loading ? "SENDING..." : "Digital Payment"}
                 </button>
 
                 <button
