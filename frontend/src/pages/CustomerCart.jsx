@@ -36,128 +36,82 @@ export default function CustomerCart() {
   };
 
   const updateQuantity = (id, delta) => {
-
     const updated = cart.map(item => {
-
       if (item.id === id) {
-
-        const newQty = Math.max(
-          1,
-          (item.quantity || 1) + delta
-        );
-
-        return {
-          ...item,
-          quantity: newQty
-        };
+        const newQty = Math.max(1, (item.quantity || 1) + delta);
+        return { ...item, quantity: newQty };
       }
-
       return item;
     });
-
     syncCart(updated);
   };
 
   const updateNote = (id, note) => {
-
     const updated = cart.map(item =>
-      item.id === id
-        ? { ...item, note }
-        : item
+      item.id === id ? { ...item, note } : item
     );
-
     syncCart(updated);
   };
 
   const total = cart.reduce(
-    (sum, item) =>
-      sum + item.price * (item.quantity || 1),
+    (sum, item) => sum + item.price * (item.quantity || 1),
     0
   );
 
   // -----------------------------
-  // ESEWA PAYMENT
+  // ESEWA PAYMENT 
   // -----------------------------
 
   const handleEsewaPayment = (orderId, amount) => {
 
     if (!orderId) {
-
       alert("Order ID missing");
       setLoading(false);
       return;
     }
 
-    const transaction_uuid = orderId.toString();
+    //  ALWAYS UNIQUE UUID
+    const transaction_uuid = `${orderId}-${Date.now()}`;
 
     const product_code = "EPAYTEST";
-
     const total_amount = amount;
-
     const secret = "8gBm/:&EnhH.1/q";
 
-    // MESSAGE
     const message =
       `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
 
-    // HASH
     const hash = CryptoJS.HmacSHA256(message, secret);
-
-    // SIGNATURE
-    const signature =
-      CryptoJS.enc.Base64.stringify(hash);
+    const signature = CryptoJS.enc.Base64.stringify(hash);
 
     const formData = {
-
       amount: amount,
-
       tax_amount: 0,
-
       total_amount: total_amount,
-
       transaction_uuid: transaction_uuid,
-
       product_code: product_code,
-
       product_service_charge: 0,
-
       product_delivery_charge: 0,
 
-      success_url:
-        `${window.location.origin}/payment-success/${orderId}`,
+      success_url: `${window.location.origin}/payment-success/${orderId}`,
+      failure_url: `${window.location.origin}/payment-failure`,
 
-      failure_url:
-        `${window.location.origin}/payment-failure`,
-
-      signed_field_names:
-        "total_amount,transaction_uuid,product_code",
-
+      signed_field_names: "total_amount,transaction_uuid,product_code",
       signature: signature
     };
 
-    // CREATE FORM
     const form = document.createElement("form");
-
     form.method = "POST";
-
-    form.action =
-      "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+    form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
 
     Object.keys(formData).forEach((key) => {
-
       const input = document.createElement("input");
-
       input.type = "hidden";
-
       input.name = key;
-
       input.value = formData[key];
-
       form.appendChild(input);
     });
 
     document.body.appendChild(form);
-
     form.submit();
   };
 
@@ -175,11 +129,8 @@ export default function CustomerCart() {
     setLoading(true);
 
     const orderData = {
-
       table_number: parseInt(table),
-
       payment_method: method,
-
       items: cart.map(item => ({
         id: item.id,
         qty: item.quantity || 1,
@@ -193,11 +144,9 @@ export default function CustomerCart() {
         `${BASE_URL}/api/place-order/`,
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json"
           },
-
           body: JSON.stringify(orderData)
         }
       );
@@ -206,38 +155,24 @@ export default function CustomerCart() {
 
       if (response.ok) {
 
-        const orderId =
-          data.order_id || data.id;
+        const orderId = data.order_id || data.id;
 
-        // ESEWA
         if (method === "esewa") {
-
           handleEsewaPayment(orderId, total);
-        }
-
-        // CASH
-        else {
-
+        } else {
           localStorage.removeItem("cart");
-
           alert("Cash order placed!");
-
           navigate(`/track/${orderId}`);
         }
 
       } else {
-
         alert("Failed to create order");
-
         setLoading(false);
       }
 
     } catch (error) {
-
       console.error(error);
-
       alert("Backend server offline");
-
       setLoading(false);
     }
   };
@@ -247,23 +182,21 @@ export default function CustomerCart() {
   // -----------------------------
 
   return (
-
     <div className="min-h-screen bg-[#F8F9FB] p-6 font-sans">
 
       <div className="max-w-xl mx-auto text-left">
 
         {/* HEADER */}
-
         <div className="flex items-center justify-between mb-8">
 
           <button
             onClick={() => navigate(-1)}
-            className="p-3 bg-white rounded-2xl shadow-sm text-slate-400"
+            className="p-3 bg-white rounded-2xl shadow-sm"
           >
             <ArrowLeft size={24} />
           </button>
 
-          <h1 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
+          <h1 className="text-xl font-black">
             Review Order
           </h1>
 
@@ -277,188 +210,83 @@ export default function CustomerCart() {
         </div>
 
         {/* TABLE */}
-
-        <div className="bg-slate-900 rounded-[32px] p-6 text-white mb-8 flex justify-between items-center shadow-xl">
+        <div className="bg-slate-900 text-white p-6 rounded-[32px] mb-8 flex justify-between">
 
           <div>
-
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-50 mb-1">
-              Your Location
-            </p>
-
-            <h2 className="text-3xl font-black italic">
-              TABLE {table}
-            </h2>
-
+            <p className="text-xs opacity-50">TABLE</p>
+            <h2 className="text-3xl font-black">{table}</h2>
           </div>
 
-          <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
-
-            <ShoppingBag size={28} />
-
-          </div>
+          <ShoppingBag size={28} />
 
         </div>
 
         {/* CART ITEMS */}
-
         <div className="space-y-4 mb-10">
 
           {cart.map(item => (
+            <div key={item.id} className="bg-white p-5 rounded-[30px]">
 
-            <div
-              key={item.id}
-              className="bg-white rounded-[35px] p-5 shadow-sm border"
-            >
-
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between">
 
                 <div>
-
-                  <h3 className="font-bold text-slate-800">
-                    {item.name}
-                  </h3>
-
-                  <p className="text-indigo-600 font-black text-sm">
-
-                    Rs.
-                    {" "}
-                    {item.price * (item.quantity || 1)}
-
+                  <h3 className="font-bold">{item.name}</h3>
+                  <p className="text-indigo-600 font-bold">
+                    Rs. {item.price * (item.quantity || 1)}
                   </p>
-
                 </div>
 
-                {/* QUANTITY */}
+                <div className="flex gap-2">
 
-                <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-xl">
+                  <button onClick={() => updateQuantity(item.id, -1)}>-</button>
 
-                  <button
-                    onClick={() =>
-                      updateQuantity(item.id, -1)
-                    }
-                    className="w-8 h-8 bg-white rounded-lg shadow-sm"
-                  >
-                    -
-                  </button>
+                  <span>{item.quantity}</span>
 
-                  <span className="font-black text-sm w-4 text-center">
-                    {item.quantity}
-                  </span>
-
-                  <button
-                    onClick={() =>
-                      updateQuantity(item.id, 1)
-                    }
-                    className="w-8 h-8 bg-white rounded-lg shadow-sm"
-                  >
-                    +
-                  </button>
+                  <button onClick={() => updateQuantity(item.id, 1)}>+</button>
 
                 </div>
 
               </div>
 
-              {/* NOTE */}
-
-              <div className="relative mt-4">
-
-                <input
-                  type="text"
-                  placeholder="Instructions..."
-                  className="w-full bg-slate-50 rounded-xl p-3 pl-10 text-[11px]"
-                  value={item.note || ""}
-                  onChange={(e) =>
-                    updateNote(item.id, e.target.value)
-                  }
-                />
-
-                <MessageSquare
-                  size={14}
-                  className="absolute left-3.5 top-3.5 text-slate-300"
-                />
-
-              </div>
+              <input
+                className="w-full mt-3 p-2 bg-gray-50 rounded"
+                placeholder="Instructions..."
+                value={item.note || ""}
+                onChange={(e) => updateNote(item.id, e.target.value)}
+              />
 
             </div>
-
           ))}
 
         </div>
 
         {/* PAYMENT */}
-
         {cart.length > 0 && (
+          <div className="bg-white p-6 rounded-[30px]">
 
-          <div className="bg-white p-8 rounded-[45px] shadow-2xl border">
+            <h2 className="text-3xl font-black mb-5">
+              Rs. {total}
+            </h2>
 
-            <div className="flex justify-between items-center mb-8">
-
-              <div>
-
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">
-                  Total Bill
-                </p>
-
-                <h2 className="text-4xl font-black text-slate-900">
-                  Rs. {total}
-                </h2>
-
-              </div>
-
-              <div className="p-4 bg-indigo-50 text-indigo-600 rounded-3xl">
-
-                <CreditCard size={32} />
-
-              </div>
-
-            </div>
-
-            {/* ESEWA BUTTON */}
-
+            {/* ESEWA */}
             <button
               onClick={() => processCheckout("esewa")}
               disabled={loading}
-              className="w-full bg-green-600 text-white py-6 rounded-[28px] font-black uppercase tracking-[0.2em] shadow-2xl"
+              className="w-full bg-green-600 text-white py-5 rounded-2xl font-bold"
             >
-
-              <div className="flex items-center justify-center gap-2">
-
-                <ShieldCheck size={18} />
-
-                <span>
-                  {loading
-                    ? "PROCESSING..."
-                    : "Pay with eSewa"}
-                </span>
-
-              </div>
-
+              <ShieldCheck /> Pay with eSewa
             </button>
 
-            {/* CASH BUTTON */}
-
+            {/* CASH */}
             <button
               onClick={() => processCheckout("cash")}
               disabled={loading}
-              className="w-full mt-3 bg-white border-2 border-slate-100 text-slate-800 py-5 rounded-[28px] font-black uppercase tracking-[0.2em]"
+              className="w-full mt-3 border py-4 rounded-2xl"
             >
-
-              <div className="flex items-center justify-center gap-2">
-
-                <Banknote
-                  size={18}
-                  className="text-emerald-500"
-                />
-
-                Pay with Cash
-
-              </div>
-
+              <Banknote /> Cash Payment
             </button>
 
           </div>
-
         )}
 
       </div>
