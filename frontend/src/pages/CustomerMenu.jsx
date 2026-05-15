@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Check, Flame } from "lucide-react";
 
 
-const BASE_URL = "https://approx-processors-window-boys.trycloudflare.com";
+const BASE_URL = "https://call-combination-instead-ranging.trycloudflare.com";
 
 export default function CustomerMenu() {
   const [menu, setMenu] = useState([]);

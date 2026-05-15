@@ -1,5 +1,9 @@
 import random
 import requests
+import base64
+import hashlib
+import hmac
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -46,7 +50,7 @@ def admin_dashboard_stats(request):
 
 
 # ==================================================
-# AUTH
+# AUTH 
 # ==================================================
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
@@ -89,7 +93,7 @@ class StaffLoginView(APIView):
 
 
 # ==================================================
-# OTP RESET
+# OTP 
 # ==================================================
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -132,7 +136,7 @@ def admin_reset_password(request):
 
 
 # ==================================================
-# STAFF
+# STAFF 
 # ==================================================
 class StaffManagementView(APIView):
     def get(self, request):
@@ -153,7 +157,7 @@ class StaffDetailView(APIView):
 
 
 # ==================================================
-# MENU
+# MENU 
 # ==================================================
 class MenuManagementView(APIView):
     def get(self, request):
@@ -183,7 +187,7 @@ class MenuItemDetailView(APIView):
 
 
 # ==================================================
-# ORDER LIST
+# ORDER
 # ==================================================
 class OrderListView(APIView):
     def get(self, request):
@@ -197,9 +201,6 @@ class OrderListView(APIView):
         return Response(OrderSerializer(orders, many=True).data)
 
 
-# ==================================================
-# ORDER DETAIL
-# ==================================================
 class OrderDetailView(APIView):
     def get(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
@@ -250,11 +251,14 @@ class PlaceOrderView(APIView):
             order.total_price = total
             order.save()
 
-        return Response({"message": "Order placed", "order_id": order.id})
+        return Response({
+            "message": "Order placed",
+            "order_id": order.id
+        })
 
 
 # ==================================================
-# TABLE CHECK (🔥 FIXED MISSING VIEW)
+# TABLE CHECK
 # ==================================================
 class CheckTableStatusView(APIView):
     permission_classes = [AllowAny]
@@ -268,38 +272,42 @@ class CheckTableStatusView(APIView):
 
 
 # ==================================================
-# KHALTI PAYMENT
+# ESEWA VERIFY 
 # ==================================================
-class KhaltiVerifyView(APIView):
+class EsewaVerifyView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        token = request.data.get("token")
-        amount = request.data.get("amount")
+
         order_id = request.data.get("order_id")
+        status = request.data.get("status")
 
-        url = "https://khalti.com/api/v2/payment/verify/"
-
-        response = requests.post(
-            url,
-            data={"token": token, "amount": amount},
-            headers={"Authorization": "Key test_secret_key_f59c8ad03f3445c2a118310d5104a0d3"}
-        )
-
-        if response.status_code == 200:
+        try:
             order = Order.objects.get(id=order_id)
-            order.status = "Paid"
-            order.payment_method = "Khalti"
-            order.paid_at = timezone.now()
-            order.save()
 
-            return Response({"message": "Payment verified"})
+            if status == "COMPLETE":
 
-        return Response({"error": "Payment failed"}, status=400)
+                order.status = "Paid"
+                order.payment_method = "eSewa"
+                order.paid_at = timezone.now()
+                order.save()
+
+                return Response({
+                    "message": "Payment successful"
+                })
+
+            return Response({
+                "error": "Payment failed"
+            }, status=400)
+
+        except Order.DoesNotExist:
+            return Response({
+                "error": "Order not found"
+            }, status=404)
 
 
 # ==================================================
-# BILLING
+# SETTLE BILL
 # ==================================================
 class SettleBillView(APIView):
     def patch(self, request, pk):

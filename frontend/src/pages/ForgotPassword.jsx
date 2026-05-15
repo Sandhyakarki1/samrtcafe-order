@@ -4,13 +4,12 @@ import { useNavigate } from "react-router-dom";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false); // New: Loading state
+  const [loading, setLoading] = useState(false); 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // CHANGE THIS to your Cloudflare link during the Viva
-  const API_BASE_URL = "https://approx-processors-window-boys.trycloudflare.com"; 
+  const API_BASE_URL = "https://call-combination-instead-ranging.trycloudflare.com"; 
 
   const handleSendOTP = async () => {
     setMessage("");
@@ -21,7 +20,7 @@ function ForgotPassword() {
       return;
     }
 
-    setLoading(true); // Start loading
+    setLoading(true); 
 
     try {
       const res = await axios.post(`${API_BASE_URL}/api/admin/forgot-password/`, { email });
@@ -37,7 +36,7 @@ function ForgotPassword() {
       const errorMsg = err.response?.data?.error || "Failed to connect to server.";
       setError(errorMsg);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false); 
     }
   };
 

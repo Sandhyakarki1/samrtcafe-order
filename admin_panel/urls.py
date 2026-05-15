@@ -8,10 +8,11 @@ from .views import (
     MenuManagementView, MenuItemDetailView,
 
     OrderListView, OrderDetailView, PlaceOrderView,
-    KhaltiVerifyView,
 
     FeedbackView, SettleBillView, BillDetailView,
     CheckTableStatusView,
+
+    EsewaVerifyView
 )
 
 urlpatterns = [
@@ -57,7 +58,7 @@ urlpatterns = [
     path('feedback/', FeedbackView.as_view()),
 
     # ==========================================
-    # PAYMENT
+    # PAYMENT (ESEWA ONLY)
     # ==========================================
-    path('api/khalti/verify/', KhaltiVerifyView.as_view()),
+    path('api/esewa/verify/', EsewaVerifyView.as_view()),
 ]
