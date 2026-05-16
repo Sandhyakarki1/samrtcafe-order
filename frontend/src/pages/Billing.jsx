@@ -16,25 +16,27 @@ const Billing = () => {
 
   const fetchOrders = async () => {
     try {
-      const typeParam = view === "history" ? "?type=history" : "";
-      const res = await fetch(`${BASE_URL}/api/orders/${typeParam}`);
+      // We fetch ALL orders so we can filter them correctly in the frontend
+      const res = await fetch(`${BASE_URL}/api/orders/`);
       const data = await res.json();
       
       if (view === "pending") {
-        // --- 1. FILTER: Only show Unpaid Cash orders that are being served ---
-        // eSewa orders are 'Paid' automatically, so they won't show here.
-        const activeCashBills = data.filter(o => 
-            o.status !== 'Paid' && 
-            o.payment_method?.toLowerCase() === 'cash'
+        // --- ACTIVE BILLS TAB ---
+        // Show ONLY Cash orders that are NOT yet Paid.
+        // If it's eSewa, it's already paid, so don't show it here.
+        const activeCashOnly = data.filter(o => 
+          o.payment_method?.toLowerCase() === 'cash' && o.status !== 'Paid'
         );
-        
-        // --- 2. SORT: Newest Order ID first ---
-        const sorted = activeCashBills.sort((a, b) => b.id - a.id);
-        setOrders(sorted);
+        setOrders(activeCashOnly.sort((a, b) => b.id - a.id));
+
       } else {
-        // History shows ALL Paid orders (eSewa + Settled Cash)
-        const historySorted = data.sort((a, b) => b.id - a.id);
-        setOrders(historySorted);
+        // --- HISTORY TAB ---
+        // Show everything that is officially 'Paid' 
+        // OR any eSewa order (because eSewa is pre-paid, even if it's being cooked/served)
+        const historyData = data.filter(o => 
+          o.status === 'Paid' || o.payment_method?.toLowerCase() === 'esewa'
+        );
+        setOrders(historyData.sort((a, b) => b.id - a.id));
       }
     } catch (err) {
       console.error("Billing fetch error:", err);
@@ -53,7 +55,7 @@ const Billing = () => {
         alert("Cash Settled! Moved to History.");
         fetchOrders();
       }
-    } catch (err) { alert("Error connecting to server."); }
+    } catch (err) { alert("Error."); }
   };
 
   const printReceipt = (order) => {
@@ -63,31 +65,17 @@ const Billing = () => {
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(`
       <html>
-        <head>
-          <title>Receipt #${order.id}</title>
-          <style>
-            body { font-family: 'Courier New', monospace; padding: 20px; font-size: 14px; }
-            .center { text-align: center; }
-            .flex { display: flex; justify-content: space-between; }
-            .hr { border-bottom: 1px dashed #000; margin: 10px 0; }
-          </style>
-        </head>
-        <body>
-          <h2 class="center">SMART-CAFE</h2>
-          <p class="center">${new Date().toLocaleString()}</p>
-          <div class="hr"></div>
-          <p>Table: ${order.table_number} | Order ID: #${order.id}</p>
-          <p>Payment: ${method}</p>
-          <div class="hr"></div>
-          ${order.items_text.split(',').map(item => `<div class="flex"><span>${item.trim()}</span></div>`).join('')}
-          <div class="hr"></div>
-          <div class="flex"><span>Sub-Total:</span><span>Rs. ${net}</span></div>
-          <div class="flex"><span>VAT (13%):</span><span>Rs. ${vat}</span></div>
-          <div class="flex" style="font-weight: bold; font-size: 16px; margin-top: 5px;">
-            <span>TOTAL:</span><span>Rs. ${order.total_price}</span>
-          </div>
-          <div class="hr"></div>
-          <p class="center">Thank You! Paid via ${method}</p>
+        <head><title>Receipt #${order.id}</title></head>
+        <body style="font-family:monospace; padding:20px;">
+          <h2 style="text-align:center">SMART-CAFE</h2>
+          <hr/>
+          <p>Table: ${order.table_number} | Order: #${order.id}</p>
+          <p>Method: ${method}</p>
+          <hr/>
+          <p>${order.items_text}</p>
+          <hr/>
+          <p>Total: Rs. ${order.total_price}</p>
+          <p style="text-align:center">Paid via ${method}</p>
         </body>
       </html>
     `);
@@ -103,7 +91,7 @@ const Billing = () => {
             {view === "pending" ? "Active Bills" : "Billing History"}
           </h1>
           <p className="text-slate-500 font-medium italic text-sm">
-            {view === "pending" ? "Tables waiting for cash payment" : "All completed transactions"}
+            {view === "pending" ? "Waiting for cash at counter" : "All digital and cash-settled orders"}
           </p>
         </div>
 
@@ -119,9 +107,7 @@ const Billing = () => {
         {orders
           .filter(o => o.table_number.toString().includes(searchTerm))
           .map((order) => {
-             const method = (order.payment_method || 'cash').toLowerCase();
-             const isOnline = method === 'esewa' || method === 'khalti';
-
+             const isOnline = order.payment_method?.toLowerCase() === 'esewa';
              return (
               <div key={order.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-white relative transition-all hover:shadow-2xl">
                 <div className="flex justify-between items-start mb-6">
@@ -131,14 +117,14 @@ const Billing = () => {
                        {isOnline ? <CreditCard size={12}/> : <Banknote size={12}/>} 
                        {order.payment_method || 'CASH'}
                     </span>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${order.status === 'Paid' ? 'text-blue-500' : 'text-emerald-500'}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${order.status === 'Paid' ? 'text-blue-500' : 'text-indigo-500'}`}>
                        {order.status}
                     </p>
                   </div>
                 </div>
 
                 <div className="mb-6">
-                   <p className="text-sm font-bold text-slate-700 italic border-l-4 border-indigo-100 pl-3 leading-relaxed">{order.items_text}</p>
+                   <p className="text-sm font-bold text-slate-700 italic border-l-4 border-indigo-100 pl-3">{order.items_text}</p>
                 </div>
 
                 <div className="bg-slate-50 rounded-3xl p-6 mb-8 font-mono border-2 border-dashed border-slate-200">
@@ -146,8 +132,8 @@ const Billing = () => {
                 </div>
 
                 <div className="flex gap-2">
-                    {/* LOGIC: eSewa orders never show the settle button. They move to history. */}
-                    {method === 'cash' && order.status !== 'Paid' ? (
+                    {/* BUTTON LOGIC */}
+                    {order.payment_method?.toLowerCase() === 'cash' && order.status !== 'Paid' ? (
                       <button onClick={() => handleSettlePayment(order.id)} className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
                         <DollarSign size={16}/> Settle Cash
                       </button>
@@ -165,12 +151,6 @@ const Billing = () => {
             );
           })}
       </div>
-      
-      {orders.length === 0 && (
-        <div className="text-center py-24 bg-white rounded-[40px] border-2 border-dashed border-slate-100 mx-auto max-w-xl">
-          <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">No manual bills to settle.</p>
-        </div>
-      )}
     </div>
   );
 };
