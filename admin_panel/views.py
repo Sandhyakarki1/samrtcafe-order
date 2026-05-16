@@ -134,12 +134,10 @@ class MenuItemDetailView(APIView):
 # ==================================================
 class OrderListView(APIView):
     def get(self, request):
-        order_type = request.query_params.get("type", "live")
-        if order_type == "history":
-            orders = Order.objects.filter(status="Paid").order_by('-id')
-        else:
-            orders = Order.objects.exclude(status="Paid").order_by('-id')
+
+        orders = Order.objects.all().order_by('-id')
         return Response(OrderSerializer(orders, many=True).data)
+
 
 class OrderDetailView(APIView):
     def get(self, request, pk):
