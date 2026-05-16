@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, Play, CheckCircle, Clock, MessageSquare } from 'lucide-react';
+import { ChefHat, Play, CheckCircle, MessageSquare, Loader2 } from 'lucide-react';
+
+// Using a consistent BASE_URL logic
+const BASE_URL = "http://127.0.0.1:8000";
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
-    const res = await fetch("http://127.0.0.1:8000/api/orders/");
-    const data = await res.json();
-    // Kitchen only sees things not yet Ready or Served
-    setOrders(data.filter(o => o.status === 'Pending' || o.status === 'Preparing'));
+    try {
+      const res = await fetch(`${BASE_URL}/api/orders/`);
+      const data = await res.json();
+      
+      // --- LOGIC: Filter for Kitchen AND Sort by Latest ID ---
+      const kitchenOrders = data
+        .filter(o => o.status === 'Pending' || o.status === 'Preparing' || o.status === 'Paid')
+        .sort((a, b) => b.id - a.id); 
+        
+      setOrders(kitchenOrders);
+    } catch (err) {
+      console.error("Kitchen fetch error:", err);
+    }
   };
 
   const updateStatus = async (id, newStatus) => {
-    await fetch(`http://127.0.0.1:8000/api/orders/${id}/`, {
+    await fetch(`${BASE_URL}/api/orders/${id}/`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus })
@@ -22,60 +34,61 @@ export default function KitchenDashboard() {
 
   useEffect(() => { 
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); // Auto-refresh every 5s
+    const interval = setInterval(fetchOrders, 5000); 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="p-8 bg-orange-50 min-h-screen">
-      <h1 className="text-3xl font-black mb-8 flex items-center gap-3"><ChefHat/> Kitchen Board</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {orders.map(order => {
-          const hasNote = order.items_text.includes("[NOTE:");
+    <div className="p-8 bg-[#FFF9F5] min-h-screen text-left font-sans">
+      <div className="flex justify-between items-center mb-10">
+        <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 italic">
+          <ChefHat size={32} className="text-orange-500"/> KITCHEN BOARD
+        </h1>
+        <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-4 py-2 rounded-full uppercase tracking-widest animate-pulse">Live Feed</span>
+      </div>
 
-          return (
-            <div key={order.id} className="bg-white p-6 rounded-[32px] shadow-sm border-2 border-orange-100 flex flex-col h-full">
-              <div className="flex justify-between mb-4">
-                  <span className="font-black text-xl text-slate-800">Table {order.table_number}</span>
-                  <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded-lg uppercase">{order.status}</span>
-              </div>
-
-              {/* Display items list */}
-              <p className="text-slate-600 mb-4 font-bold bg-slate-50 p-4 rounded-2xl italic flex-1">
-                {order.items_text}
-              </p>
-
-              {/*  Highlight Customer Note specifically if it exists */}
-              {hasNote && (
-                <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-start gap-2">
-                  <MessageSquare size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Special Instruction:</p>
-                    <p className="text-xs font-black text-slate-800">
-                      {/* Extracting just the note text to show it clearly */}
-                      {order.items_text.split("[NOTE:")[1]?.replace("]", "")}
-                    </p>
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {orders.map(order => (
+          <div key={order.id} className="bg-white p-7 rounded-[40px] shadow-sm border-2 border-orange-50 flex flex-col h-full hover:shadow-xl transition-all">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-1">Table</span>
+                  <span className="font-black text-4xl text-slate-800 tracking-tighter">{order.table_number}</span>
                 </div>
-              )}
-              
-              {order.status === 'Pending' ? (
-                <button onClick={() => updateStatus(order.id, 'Preparing')} className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-100">
-                  <Play size={18}/> START PREPARING
+                <div className="text-right">
+                  <span className="text-[10px] font-black text-slate-300 uppercase block mb-1">Order ID</span>
+                  <span className="font-bold text-slate-400 text-sm">#00{order.id}</span>
+                </div>
+            </div>
+
+            <div className="bg-slate-50 p-5 rounded-3xl mb-6 flex-1 border border-slate-100">
+               <p className="text-sm font-bold text-slate-700 leading-relaxed italic">{order.items_text}</p>
+            </div>
+
+            <div className="flex gap-3">
+              {(order.status === 'Pending' || order.status === 'Paid') ? (
+                <button 
+                  onClick={() => updateStatus(order.id, 'Preparing')} 
+                  className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-600 active:scale-95 transition-all shadow-lg shadow-orange-100"
+                >
+                  <Play size={16} fill="white"/> Start Cooking
                 </button>
               ) : (
-                <button onClick={() => updateStatus(order.id, 'Ready')} className="w-full bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-100">
-                  <CheckCircle size={18}/> MARK AS READY
+                <button 
+                  onClick={() => updateStatus(order.id, 'Ready')} 
+                  className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-lg shadow-emerald-100"
+                >
+                  <CheckCircle size={18}/> Mark Ready
                 </button>
               )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {orders.length === 0 && (
-        <div className="text-center py-20 text-slate-300 font-bold uppercase tracking-widest">
-           No active orders for the kitchen
+        <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-orange-100">
+           <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">All orders completed</p>
         </div>
       )}
     </div>
