@@ -6,14 +6,14 @@ const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudfla
 const Billing = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [view, setView] = useState("active"); 
+  const [view, setView] = useState("active"); // default to Active/Activity tab
 
   const fetchOrders = async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/orders/`);
       if (res.ok) {
         const data = await res.json();
-        
+        // SORTING: Newest Order ID first for both tabs
         const sortedData = data.sort((a, b) => b.id - a.id);
         setOrders(sortedData);
       }
@@ -44,23 +44,21 @@ const Billing = () => {
 
   const printReceipt = (order) => {
     const method = (order.payment_method || 'CASH').toUpperCase();
-    const net = (order.total_price / 1.13).toFixed(2);
-    const vat = (order.total_price - net).toFixed(2);
-    
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(`
       <html>
-        <body style="font-family:monospace; padding:20px;">
+        <body style="font-family:monospace; padding:20px; font-size:14px;">
           <h2 style="text-align:center">SMART-CAFE</h2>
           <p style="text-align:center">${new Date(order.created_at).toLocaleString()}</p>
           <hr/>
           <p>Table: ${order.table_number} | Order: #${order.id}</p>
           <p>Method: ${method}</p>
           <hr/>
-          <p>${order.items_text}</p>
+          <p>Items:</p>
+          <p style="font-style:italic;">${order.items_text}</p>
           <hr/>
-          <p style="font-weight:bold; font-size:16px;">Total: Rs. ${order.total_price}</p>
-          <p style="text-align:center; margin-top:20px;">Paid via ${method}<br/>Thank You!</p>
+          <p style="font-weight:bold; font-size:16px;">Total Amount: Rs. ${order.total_price}</p>
+          <p style="text-align:center; margin-top:20px;">PAID VIA ${method}<br/>Visit Again!</p>
         </body>
       </html>
     `);
@@ -68,14 +66,17 @@ const Billing = () => {
     setTimeout(() => { printWindow.print(); }, 500);
   };
 
+
+  // 1. ACTIVE/ACTIVITY TAB: Show orders that are NOT paid and chose CASH
   const activeList = orders.filter(o => 
-    o.status !== 'Paid' && 
+    o.status.toLowerCase() !== 'paid' && 
     o.payment_method?.toLowerCase() === 'cash' &&
     o.table_number.toString().includes(searchTerm)
   );
 
+  // 2. HISTORY TAB: Show everything that is PAID (both eSewa and Settled Cash)
   const historyList = orders.filter(o => 
-    o.status === 'Paid' && 
+    (o.status.toLowerCase() === 'paid' || o.payment_method?.toLowerCase() === 'esewa') && 
     o.table_number.toString().includes(searchTerm)
   );
 
@@ -88,10 +89,10 @@ const Billing = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
           <h1 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">
-            {view === "active" ? "Active Bills" : "Billing History"}
+            {view === "active" ? "Activity" : "History"}
           </h1>
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-            {view === "active" ? `Waiting for ${activeList.length} cash settlements` : `${historyList.length} transactions completed`}
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
+            {view === "active" ? `Waiting for ${activeList.length} cash payments` : `${historyList.length} completed transactions`}
           </p>
         </div>
 
@@ -102,7 +103,7 @@ const Billing = () => {
               onClick={() => setView("active")} 
               className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === "active" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
             >
-              ACTIVE
+              ACTIVITY
             </button>
             <button 
               onClick={() => setView("history")} 
@@ -113,7 +114,7 @@ const Billing = () => {
           </div>
           
           {/* SEARCH BAR */}
-          <div className="bg-white border-2 border-slate-50 p-2 rounded-2xl flex items-center gap-2 px-4 shadow-sm">
+          <div className="bg-white border-2 border-slate-100 p-2 rounded-2xl flex items-center gap-2 px-4 shadow-sm">
             <Search size={16} className="text-slate-300" />
             <input 
               type="text" placeholder="Table #" 
@@ -124,7 +125,7 @@ const Billing = () => {
         </div>
       </div>
 
-      {/* ORDERS GRID (Sorted Latest First) */}
+      {/* ORDERS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {currentDisplay.map((order) => {
           const isEsewa = order.payment_method?.toLowerCase() === 'esewa';
@@ -132,7 +133,7 @@ const Billing = () => {
           return (
             <div key={order.id} className="bg-white rounded-[45px] p-8 shadow-sm border-2 border-slate-50 relative hover:shadow-2xl transition-all group">
               <div className="flex justify-between items-start mb-6">
-                <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg">
                   {order.table_number}
                 </div>
                 <div className="text-right">
@@ -141,7 +142,7 @@ const Billing = () => {
                     {order.payment_method || 'CASH'}
                   </span>
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-                    Order #{order.id} • {order.status}
+                    ID #{order.id} • {order.status}
                   </p>
                 </div>
               </div>
@@ -157,8 +158,8 @@ const Billing = () => {
 
               <div className="flex gap-2">
                 {/* 
-                   If the view is ACTIVE, we show the Settle button for Cash.
-                   If the view is HISTORY, we show a success badge.
+                   If the tab is ACTIVITY: show Settle Cash.
+                   If the tab is HISTORY: show "Paid Successfully" and specific method.
                 */}
                 {view === "active" ? (
                   <button 
@@ -169,8 +170,8 @@ const Billing = () => {
                   </button>
                 ) : (
                   <div className="flex-1 bg-emerald-50 text-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase flex flex-col items-center justify-center border border-emerald-100">
-                    <span>Paid Successfully</span>
-                    <span className="opacity-50 text-[7px] italic">via {order.payment_method?.toUpperCase()}</span>
+                    <span>PAID SUCCESSFULLY</span>
+                    <span className="opacity-60 text-[7px] italic">via {order.payment_method?.toUpperCase()}</span>
                   </div>
                 )}
                 
@@ -189,7 +190,7 @@ const Billing = () => {
 
       {currentDisplay.length === 0 && (
         <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-slate-50">
-          <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">No records in this section</p>
+          <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs italic">Section is currently empty</p>
         </div>
       )}
     </div>
