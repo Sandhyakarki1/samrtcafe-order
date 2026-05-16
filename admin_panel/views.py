@@ -26,18 +26,13 @@ from .serializers import (
 )
 
 # ==================================================
-# DASHBOARD STATISTICS
+# 1. DASHBOARD & STATS
 # ==================================================
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def admin_dashboard_stats(request):
     today = timezone.now().date()
-    # Revenue is only from PAID orders
-    revenue = Order.objects.filter(
-        status='Paid',
-        created_at__date=today
-    ).aggregate(Sum('total_price'))['total_price__sum'] or 0
-
+    revenue = Order.objects.filter(status='Paid', created_at__date=today).aggregate(Sum('total_price'))['total_price__sum'] or 0
     return Response({
         "today_revenue": float(revenue),
         "total_orders": Order.objects.count(),
@@ -47,9 +42,8 @@ def admin_dashboard_stats(request):
         "active_tables": Order.objects.exclude(status='Paid').count()
     })
 
-
 # ==================================================
-# AUTHENTICATION
+# 2. AUTHENTICATION & OTP
 # ==================================================
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
@@ -71,10 +65,6 @@ class StaffLoginView(APIView):
             return Response({"message": "Login successful", "username": user.username, "role": user.profile.role})
         return Response({"error": "Invalid credentials"}, status=401)
 
-
-# ==================================================
-# OTP / PASSWORD RECOVERY
-# ==================================================
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_forgot_password(request):
@@ -91,7 +81,7 @@ def admin_forgot_password(request):
 def admin_reset_password(request):
     email, otp, password = request.data.get("email"), request.data.get("otp"), request.data.get("password")
     user = get_object_or_404(User, email=email)
-    if user.profile.otp == otp:
+    if str(user.profile.otp) == str(otp):
         user.set_password(password)
         user.profile.otp = None
         user.profile.save()
@@ -99,9 +89,8 @@ def admin_reset_password(request):
         return Response({"message": "Password updated"})
     return Response({"error": "Invalid OTP"}, status=400)
 
-
 # ==================================================
-# STAFF & MENU
+# 3. STAFF MANAGEMENT
 # ==================================================
 class StaffManagementView(APIView):
     def get(self, request):
@@ -117,6 +106,9 @@ class StaffDetailView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
+# ==================================================
+# 4. MENU MANAGEMENT
+# ==================================================
 class MenuManagementView(APIView):
     def get(self, request):
         items = MenuItem.objects.all()
@@ -137,14 +129,12 @@ class MenuItemDetailView(APIView):
         get_object_or_404(MenuItem, pk=pk).delete()
         return Response({"message": "Deleted"})
 
-
 # ==================================================
-# ORDER LOGIC
+# 5. ORDER & TABLE LOGIC
 # ==================================================
 class OrderListView(APIView):
     def get(self, request):
         order_type = request.query_params.get("type", "live")
-        # Sorting latest first (b.id - a.id logic)
         if order_type == "history":
             orders = Order.objects.filter(status="Paid").order_by('-id')
         else:
@@ -155,16 +145,12 @@ class OrderDetailView(APIView):
     def get(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         return Response(OrderSerializer(order).data)
-
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
-        # Capture status (Paid) and method (Cash) from Billing.jsx
         order.status = request.data.get("status", order.status)
         order.payment_method = request.data.get("payment_method", order.payment_method)
-        if order.status == "Paid":
-            order.paid_at = timezone.now()
         order.save()
-        return Response({"message": "Database Updated Successfully"})
+        return Response({"message": "Updated"})
 
 class PlaceOrderView(APIView):
     permission_classes = [AllowAny]
@@ -194,50 +180,41 @@ class CheckTableStatusView(APIView):
         occupied = Order.objects.filter(table_number=table_id).exclude(status="Paid").exists()
         return Response({"occupied": occupied})
 
-
 # ==================================================
-# UNIFIED ESEWA VERIFICATION (SMART LOGIC)
+# 6. PAYMENT & BILLING
 # ==================================================
 class EsewaVerifyView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
         token = request.data.get("token")
         order_id = request.data.get("order_id")
-        esewa_status = request.data.get("status") # For real esewa response
-
-        # 1. Handle VIVA MOCK Simulation
         if token == "ESEWA_VIVA_SUCCESS_TOKEN":
             order = get_object_or_404(Order, id=order_id)
             order.status = "Paid"
             order.payment_method = "eSewa"
             order.save()
-            return Response({"message": "Mock Verification Success"}, status=200)
+            return Response({"message": "Verified"}, status=200)
+        return Response({"error": "Invalid Token"}, status=400)
 
-        # 2. Handle REAL ESEWA COMPLETE Response
-        if esewa_status == "COMPLETE":
-            order = get_object_or_404(Order, id=order_id)
-            order.status = "Paid"
-            order.payment_method = "eSewa"
-            order.paid_at = timezone.now()
-            order.save()
-            return Response({"message": "Real Payment Success"})
-
-        return Response({"error": "Verification Failed"}, status=400)
-
-
-# ==================================================
-# BILLING & FEEDBACK
-# ==================================================
 class SettleBillView(APIView):
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         order.status = "Paid"
         order.payment_method = "cash"
-        order.paid_at = timezone.now()
         order.save()
         return Response({"message": "Bill settled"})
 
+class BillDetailView(APIView):
+    def get(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        total = float(order.total_price)
+        net = round(total / 1.13, 2)
+        vat = round(total - net, 2)
+        return Response({"table": order.table_number, "total": total, "net": net, "vat": vat})
+
+# ==================================================
+# 7. FEEDBACK
+# ==================================================
 class FeedbackView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
@@ -245,7 +222,5 @@ class FeedbackView(APIView):
         return Response(FeedbackSerializer(feedbacks, many=True).data)
     def post(self, request):
         order = get_object_or_404(Order, id=request.data.get("order_id"))
-        Feedback.objects.create(
-            order=order, rating=request.data.get("rating"), comment=request.data.get("comment")
-        )
+        Feedback.objects.create(order=order, rating=request.data.get("rating"), comment=request.data.get("comment"))
         return Response({"message": "Success"})

@@ -2,23 +2,18 @@ from django.urls import path
 from .views import (
     AdminLoginView, StaffLoginView,
     admin_forgot_password, admin_reset_password, admin_dashboard_stats,
-
     StaffManagementView, StaffDetailView,
-
     MenuManagementView, MenuItemDetailView,
-
     OrderListView, OrderDetailView, PlaceOrderView,
-
     FeedbackView, SettleBillView, BillDetailView,
     CheckTableStatusView,
-
-    EsewaVerifyView
+    EsewaVerifyView  
 )
 
 urlpatterns = [
 
     # ==========================================
-    # AUTH
+    # AUTHENTICATION & DASHBOARD
     # ==========================================
     path('admin/login/', AdminLoginView.as_view(), name='admin_login'),
     path('staff/login/', StaffLoginView.as_view(), name='staff_login'),
@@ -27,38 +22,39 @@ urlpatterns = [
     path('stats/', admin_dashboard_stats),
 
     # ==========================================
-    # STAFF
+    # STAFF MANAGEMENT
     # ==========================================
     path('staff/', StaffManagementView.as_view()),
     path('staff/<int:pk>/', StaffDetailView.as_view()),
 
     # ==========================================
-    # MENU
+    # MENU MANAGEMENT
     # ==========================================
     path('menu/', MenuManagementView.as_view()),
     path('menu/<int:pk>/', MenuItemDetailView.as_view()),
 
     # ==========================================
-    # ORDERS
+    # ORDERS (Kitchen & Tracking)
     # ==========================================
     path('orders/', OrderListView.as_view()),
-    path('orders/<int:pk>/', OrderDetailView.as_view()),
+    path('orders/<int:pk>/', OrderDetailView.as_view()),  
     path('place-order/', PlaceOrderView.as_view()),
     path('check-table/<int:table_id>/', CheckTableStatusView.as_view()),
 
     # ==========================================
-    # BILLING
+    # PAYMENT VERIFICATION (eSewa)
     # ==========================================
-    path('orders/<int:pk>/settle/', SettleBillView.as_view()),
-    path('orders/<int:pk>/bill-details/', BillDetailView.as_view()),
+ 
+    path('esewa/verify/', EsewaVerifyView.as_view(), name='esewa_verify'),
 
     # ==========================================
-    # FEEDBACK
+    # BILLING & RECEIPTS
+    # ==========================================
+    path('settle-bill/<int:pk>/', SettleBillView.as_view()),
+    path('bill-detail/<int:pk>/', BillDetailView.as_view()),
+
+    # ==========================================
+    # CUSTOMER FEEDBACK
     # ==========================================
     path('feedback/', FeedbackView.as_view()),
-
-    # ==========================================
-    # PAYMENT (ESEWA ONLY)
-    # ==========================================
-    path('api/esewa/verify/', EsewaVerifyView.as_view()),
 ]

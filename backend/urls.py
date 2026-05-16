@@ -1,23 +1,31 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.conf import settings 
 from django.conf.urls.static import static 
 
-admin.site.site_header = "SmartCafe Admin Portal"
-admin.site.index_title = "Welcome to SmartCafe Kitchen"
+# Professional Admin Customization
+admin.site.site_header = "SmartCafe Dashboard"
+admin.site.site_title = "SmartCafe Management"
+admin.site.index_title = "System Administration"
 
-
+# Returns a JSON instead of plain text (Cleaner for APIs)
 def home(request):
-    return HttpResponse("SmartCafe backend is running!")
+    return JsonResponse({"status": "Online", "project": "SmartCafe Backend"})
 
 urlpatterns = [
+    # Root URL
     path('', home),
-    path('djadmin/', admin.site.urls),  # superuser admin panel
-    path('api/', include('admin_panel.urls')),  # include all admin_panel API paths
+
+    # Main Django Admin (accessible via /djadmin/)
+    path('djadmin/', admin.site.urls),  
+
+    # ALL API Routes are prefixed with /api/
+    # This means your eSewa link is: /api/esewa/verify/
+    path('api/', include('admin_panel.urls')),  
 ]
 
-# This line allows Django to serve images during development
+# Serve media items (Food Images) during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, 
                           document_root=settings.MEDIA_ROOT)

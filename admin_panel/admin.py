@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.utils.html import format_html
 from .models import Profile, MenuItem, Order, OrderItem, Feedback, Billing
 
 # ==================================================
-# STAFF & PROFILE MANAGEMENT
+# STAFF & PROFILE MANAGEMENT 
 # ==================================================
 class ProfileInline(admin.StackedInline):
     model = Profile
@@ -12,14 +13,14 @@ class ProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (ProfileInline, )
-    list_display = ('username', 'email', 'get_role', 'is_staff')
-    list_filter = ('profile__role', 'is_staff')
-
+    # UPDATED: Added 'is_active' to see who is deactivated 
+    list_display = ('username', 'email', 'get_role', 'is_active', 'is_staff')
+    list_filter = ('profile__role', 'is_active', 'is_staff')
+    
     def get_role(self, obj):
         return obj.profile.role if hasattr(obj, 'profile') else "No Role"
     get_role.short_description = 'Role'
 
-    
     User._meta.verbose_name = "Staff Account"
     User._meta.verbose_name_plural = "Staff Accounts"
 
@@ -37,15 +38,15 @@ class MenuItemAdmin(admin.ModelAdmin):
 
     def stock_status(self, obj):
         if obj.stock > 10:
-            return "✅ High Stock"
+            return format_html('<b style="color:green;">✅ High Stock</b>')
         elif obj.stock > 0:
-            return "⚠️ Low Stock"
-        return "❌ Out of Stock"
+            return format_html('<b style="color:orange;">⚠️ Low Stock</b>')
+        return format_html('<b style="color:red;">❌ Out of Stock</b>')
     
     stock_status.short_description = 'Availability'
 
 # ==================================================
-# ORDER & BILLING MANAGEMENT
+# ORDER MANAGEMENT (Latest First & Payment Method)
 # ==================================================
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -54,34 +55,38 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    # UPDATED: Added 'payment_method' to display
+    list_display = ('id', 'table_number', 'status', 'get_payment_icon', 'total_price', 'created_at')
     
-    list_display = ('id', 'table_number', 'status', 'total_price', 'created_at')
-    
-    # Allows admin to filter by Status (Pending, Served, Paid) and Table
-    list_filter = ('status', 'table_number', 'created_at')
-    
-    # Allows admin to search by Order ID
+    # Allows admin to filter by Payment Method as well
+    list_filter = ('status', 'payment_method', 'table_number', 'created_at')
     search_fields = ('id', 'table_number')
-    
     inlines = [OrderItemInline]
-    
-    # Sort orders so the newest ones appear at the top in Django Admin
-    ordering = ('-created_at',)
+    ordering = ('-id',) # Latest orders at the top
 
+    def get_payment_icon(self, obj):
+        if obj.payment_method.lower() == 'esewa':
+            return format_html('<span style="color: #60bb46; font-weight:bold;">📱 eSewa</span>')
+        return format_html('<span style="color: #f59e0b; font-weight:bold;">💵 Cash</span>')
+    get_payment_icon.short_description = 'Method'
+
+# ==================================================
+# BILLING MANAGEMENT 
+# ==================================================
 @admin.register(Billing)
 class BillingAdmin(admin.ModelAdmin):
-    # Only show orders that are either 'Served' (ready to pay) or 'Paid' 
     def get_queryset(self, request):
+        # Focus on orders that are Served or Paid
         return super().get_queryset(request).filter(status__in=['Served', 'Paid'])
 
-    list_display = ('id', 'table_number', 'total_price', 'get_net_amount', 'get_vat_amount', 'status', 'created_at')
-    list_filter = ('status', 'table_number')
-    readonly_fields = ('table_number', 'total_price', 'get_net_amount', 'get_vat_amount', 'created_at')
+    list_display = ('id', 'table_number', 'payment_method', 'total_price', 'get_vat_amount', 'status', 'created_at')
+    list_filter = ('payment_method', 'status', 'created_at')
+    readonly_fields = ('table_number', 'total_price', 'created_at')
+    ordering = ('-created_at',)
 
-    # Calculations for the Admin View (Inclusive 13% VAT)
     def get_net_amount(self, obj):
         return f"Rs. {round(float(obj.total_price) / 1.13, 2)}"
-    get_net_amount.short_description = 'Net (Food)'
+    get_net_amount.short_description = 'Net'
 
     def get_vat_amount(self, obj):
         net = float(obj.total_price) / 1.13
@@ -96,6 +101,7 @@ class BillingAdmin(admin.ModelAdmin):
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ('id', 'get_table', 'rating_stars', 'comment', 'created_at')
     list_filter = ('rating', 'created_at')
+    ordering = ('-created_at',)
 
     def get_table(self, obj):
         return f"Table {obj.order.table_number}"
