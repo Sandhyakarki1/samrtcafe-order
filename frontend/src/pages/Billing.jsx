@@ -21,14 +21,18 @@ const Billing = () => {
       const data = await res.json();
       
       if (view === "pending") {
-        // --- 1. FILTER: Show only orders NOT yet 'Paid' ---
-        const pendingOnly = data.filter(o => o.status !== 'Paid');
+        // --- 1. FILTER: Only show Unpaid Cash orders that are being served ---
+        // eSewa orders are 'Paid' automatically, so they won't show here.
+        const activeCashBills = data.filter(o => 
+            o.status !== 'Paid' && 
+            o.payment_method?.toLowerCase() === 'cash'
+        );
         
-        // --- 2. SORT: Newest Order ID first (Latest on top) ---
-        const sorted = pendingOnly.sort((a, b) => b.id - a.id);
+        // --- 2. SORT: Newest Order ID first ---
+        const sorted = activeCashBills.sort((a, b) => b.id - a.id);
         setOrders(sorted);
       } else {
-        // History shows PAID orders, also sorted by Latest ID
+        // History shows ALL Paid orders (eSewa + Settled Cash)
         const historySorted = data.sort((a, b) => b.id - a.id);
         setOrders(historySorted);
       }
@@ -46,7 +50,7 @@ const Billing = () => {
         body: JSON.stringify({ status: "Paid", payment_method: "cash" })
       });
       if (res.ok) {
-        alert("Cash Settled! Order moved to History.");
+        alert("Cash Settled! Moved to History.");
         fetchOrders();
       }
     } catch (err) { alert("Error connecting to server."); }
@@ -65,7 +69,6 @@ const Billing = () => {
             body { font-family: 'Courier New', monospace; padding: 20px; font-size: 14px; }
             .center { text-align: center; }
             .flex { display: flex; justify-content: space-between; }
-            .bold { font-weight: bold; }
             .hr { border-bottom: 1px dashed #000; margin: 10px 0; }
           </style>
         </head>
@@ -73,16 +76,18 @@ const Billing = () => {
           <h2 class="center">SMART-CAFE</h2>
           <p class="center">${new Date().toLocaleString()}</p>
           <div class="hr"></div>
-          <div class="flex"><span>Table: ${order.table_number}</span><span>ID: #${order.id}</span></div>
-          <p>Method: ${method}</p>
+          <p>Table: ${order.table_number} | Order ID: #${order.id}</p>
+          <p>Payment: ${method}</p>
           <div class="hr"></div>
           ${order.items_text.split(',').map(item => `<div class="flex"><span>${item.trim()}</span></div>`).join('')}
           <div class="hr"></div>
-          <div class="flex"><span>Net Amount:</span><span>Rs. ${net}</span></div>
+          <div class="flex"><span>Sub-Total:</span><span>Rs. ${net}</span></div>
           <div class="flex"><span>VAT (13%):</span><span>Rs. ${vat}</span></div>
-          <div class="flex bold"><span>TOTAL:</span><span>Rs. ${order.total_price}</span></div>
+          <div class="flex" style="font-weight: bold; font-size: 16px; margin-top: 5px;">
+            <span>TOTAL:</span><span>Rs. ${order.total_price}</span>
+          </div>
           <div class="hr"></div>
-          <p class="center italic">Thank You!</p>
+          <p class="center">Thank You! Paid via ${method}</p>
         </body>
       </html>
     `);
@@ -98,7 +103,7 @@ const Billing = () => {
             {view === "pending" ? "Active Bills" : "Billing History"}
           </h1>
           <p className="text-slate-500 font-medium italic text-sm">
-            {view === "pending" ? "Newest orders are shown at the top" : "Completed transactions"}
+            {view === "pending" ? "Tables waiting for cash payment" : "All completed transactions"}
           </p>
         </div>
 
@@ -114,10 +119,11 @@ const Billing = () => {
         {orders
           .filter(o => o.table_number.toString().includes(searchTerm))
           .map((order) => {
-             const isOnline = order.payment_method?.toLowerCase() === 'esewa' || order.payment_method?.toLowerCase() === 'khalti';
+             const method = (order.payment_method || 'cash').toLowerCase();
+             const isOnline = method === 'esewa' || method === 'khalti';
 
              return (
-              <div key={order.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-white relative transition-all hover:shadow-2xl hover:-translate-y-1">
+              <div key={order.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-white relative transition-all hover:shadow-2xl">
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg">{order.table_number}</div>
                   <div className="text-right">
@@ -140,14 +146,14 @@ const Billing = () => {
                 </div>
 
                 <div className="flex gap-2">
-                    {/* BUTTON LOGIC: Settle Cash only if unpaid */}
-                    {order.status !== 'Paid' ? (
+                    {/* LOGIC: eSewa orders never show the settle button. They move to history. */}
+                    {method === 'cash' && order.status !== 'Paid' ? (
                       <button onClick={() => handleSettlePayment(order.id)} className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
                         <DollarSign size={16}/> Settle Cash
                       </button>
                     ) : (
                       <div className="flex-1 bg-emerald-50 text-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center border border-emerald-100">
-                        <span>PAID SUCCESSFULLY</span>
+                        <span>PAID ONLINE</span>
                         <span className="opacity-60 text-[8px] italic uppercase">via {order.payment_method}</span>
                       </div>
                     )}
@@ -162,7 +168,7 @@ const Billing = () => {
       
       {orders.length === 0 && (
         <div className="text-center py-24 bg-white rounded-[40px] border-2 border-dashed border-slate-100 mx-auto max-w-xl">
-          <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">No orders in this section.</p>
+          <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">No manual bills to settle.</p>
         </div>
       )}
     </div>
