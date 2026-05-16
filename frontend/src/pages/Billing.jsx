@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, Search, CreditCard, Banknote, CheckCircle, Clock } from 'lucide-react';
+import { Printer, Search, CreditCard, Banknote, CheckCircle, Clock, Activity, History as HistoryIcon } from 'lucide-react';
 
 
 const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudflare.com";
@@ -7,15 +7,13 @@ const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudfla
 const Billing = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [view, setView] = useState("active"); // Default view is Activity
+  const [view, setView] = useState("active"); 
 
   const fetchOrders = async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/orders/`);
       if (res.ok) {
         const data = await res.json();
-        
-        // Sorts every order by ID descending (Highest ID on top)
         const sortedData = data.sort((a, b) => b.id - a.id);
         setOrders(sortedData);
       }
@@ -26,7 +24,7 @@ const Billing = () => {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); 
+    const interval = setInterval(fetchOrders, 5000); // 5s auto-refresh
     return () => clearInterval(interval);
   }, []);
 
@@ -43,9 +41,7 @@ const Billing = () => {
       });
 
       if (res.ok) {
-        
-        // We re-fetch immediately so the UI moves the card from Active to History
-        await fetchOrders();
+        await fetchOrders(); // Move order instantly
         alert("Payment Settled! Bill moved to History.");
       }
     } catch (err) {
@@ -65,13 +61,16 @@ const Billing = () => {
           <h2 style="text-align:center">SMART-CAFE</h2>
           <p style="text-align:center">${new Date(order.created_at).toLocaleString()}</p>
           <hr/>
-          <p>Table: ${order.table_number} | Order: #${order.id}</p>
+          <p>Table: ${order.table_number} | ID: #${order.id}</p>
           <p>Method: ${method}</p>
           <hr/>
-          <p>ITEMS:</p>
+          <p><strong>ITEMS:</strong></p>
           <p>${order.items_text}</p>
           <hr/>
+          <p>Sub-Total: Rs. ${net}</p>
+          <p>VAT (13%): Rs. ${vat}</p>
           <p style="font-weight:bold; font-size:16px;">TOTAL: Rs. ${order.total_price}</p>
+          <hr/>
           <p style="text-align:center; margin-top:20px;">Paid via ${method}<br/>Thank You!</p>
         </body>
       </html>
@@ -81,14 +80,15 @@ const Billing = () => {
   };
 
 
-  // ACTIVITY TAB: Show orders NOT yet Paid (Only if customer chose Cash)
+
+  //  Show orders that are NOT Paid (Only those waiting for Cash)
   const activeList = orders.filter(o => 
     o.status.toLowerCase() !== 'paid' && 
     o.payment_method?.toLowerCase() === 'cash' &&
     o.table_number.toString().includes(searchTerm)
   );
 
-  // HISTORY TAB: Show ALL orders that are PAID (eSewa + Settled Cash)
+  //Show orders that ARE Paid (Both eSewa and Settled Cash)
   const historyList = orders.filter(o => 
     o.status.toLowerCase() === 'paid' && 
     o.table_number.toString().includes(searchTerm)
@@ -103,35 +103,34 @@ const Billing = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
           <h1 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">
-            {view === "active" ? "Active Queue" : "Billing History"}
+            {view === "active" ? "Active Bills" : "Billing History"}
           </h1>
-          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
-            {view === "active" ? `${activeList.length} Cash Tables Pending` : `${historyList.length} Total Sales Records`}
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
+            {view === "active" ? `Pending Cash: ${activeList.length}` : `Closed Invoices: ${historyList.length}`}
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* TAB SWITCHER */}
           <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 shadow-inner">
             <button 
               onClick={() => setView("active")} 
-              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === "active" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${view === "active" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
             >
-              ACTIVITY
+              <Activity size={14}/> ACTIVE
             </button>
             <button 
               onClick={() => setView("history")} 
-              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === "history" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${view === "history" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
             >
-              HISTORY
+              <HistoryIcon size={14}/> HISTORY
             </button>
           </div>
           
           <div className="bg-white border-2 border-slate-100 p-2 rounded-2xl flex items-center gap-2 px-4 shadow-sm">
             <Search size={16} className="text-slate-300" />
             <input 
-              type="text" placeholder="Search Table..." 
-              className="outline-none text-xs font-bold w-24 bg-transparent" 
+              type="text" placeholder="Table #" 
+              className="outline-none text-xs font-bold w-16 bg-transparent" 
               onChange={(e) => setSearchTerm(e.target.value)} 
             />
           </div>
@@ -152,15 +151,15 @@ const Billing = () => {
                 <div className="text-right">
                   <span className={`flex items-center gap-1 justify-end text-[10px] font-black uppercase mb-1 ${isEsewa ? 'text-emerald-500' : 'text-orange-500'}`}>
                     {isEsewa ? <CreditCard size={12}/> : <Banknote size={12}/>} 
-                    {order.payment_method || 'CASH'}
+                    {order.payment_method?.toUpperCase() || 'CASH'}
                   </span>
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic">
-                    {order.status} • Order #{order.id}
+                    ID #{order.id} • {order.status}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-slate-50/50 rounded-3xl p-6 mb-8 border border-slate-50 min-h-[90px]">
+              <div className="bg-slate-50/50 rounded-3xl p-5 mb-8 border border-slate-50 min-h-[90px]">
                 <p className="text-xs font-bold text-slate-600 italic leading-relaxed">{order.items_text}</p>
               </div>
 
@@ -173,14 +172,14 @@ const Billing = () => {
                 {view === "active" ? (
                   <button 
                     onClick={() => handleSettleCash(order.id)} 
-                    className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
                   >
                     <CheckCircle size={16}/> Settle Cash
                   </button>
                 ) : (
                   <div className="flex-1 bg-emerald-50 text-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase flex flex-col items-center justify-center border border-emerald-100">
-                    <span className="flex items-center gap-1"><CheckCircle size={12}/> Paid Successfully</span>
-                    <span className="opacity-60 text-[7px] italic">via {order.payment_method?.toUpperCase()}</span>
+                    <span>Paid Successfully</span>
+                    <span className="opacity-50 text-[7px] italic uppercase">via {order.payment_method}</span>
                   </div>
                 )}
                 
@@ -197,12 +196,13 @@ const Billing = () => {
       </div>
 
       {currentDisplay.length === 0 && (
-        <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-slate-50">
-          <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">Queue is currently empty</p>
+        <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-slate-50 flex flex-col items-center gap-4">
+          <Clock size={40} className="text-slate-100" />
+          <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">No Records Found</p>
         </div>
       )}
     </div>
   );
 };
 
-export default Billing;  
+export default Billing;

@@ -1,9 +1,7 @@
 import random
 import requests
 import base64
-import hashlib
-import hmac
-
+import json
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -16,6 +14,7 @@ from django.db.models import Sum
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status
 from rest_framework.permissions import AllowAny
 
 from .models import Profile, Order, OrderItem, MenuItem, Feedback
@@ -27,13 +26,13 @@ from .serializers import (
 )
 
 # ==================================================
-# DASHBOARD
+# DASHBOARD STATISTICS
 # ==================================================
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def admin_dashboard_stats(request):
     today = timezone.now().date()
-
+    # Revenue is only from PAID orders
     revenue = Order.objects.filter(
         status='Paid',
         created_at__date=today
@@ -50,156 +49,107 @@ def admin_dashboard_stats(request):
 
 
 # ==================================================
-# AUTH 
+# AUTHENTICATION
 # ==================================================
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-
+        email, password = request.data.get("email"), request.data.get("password")
         user_obj = get_object_or_404(User, email=email)
         user = authenticate(username=user_obj.username, password=password)
-
         if user and user.profile.role == "Admin":
-            return Response({
-                "message": "Login successful",
-                "username": user.username
-            })
-
+            return Response({"message": "Login successful", "username": user.username})
         return Response({"error": "Invalid credentials"}, status=401)
-
 
 class StaffLoginView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-        role = request.data.get("role")
-
+        email, password, role = request.data.get("email"), request.data.get("password"), request.data.get("role")
         user_obj = get_object_or_404(User, email=email)
         user = authenticate(username=user_obj.username, password=password)
-
         if user and user.profile.role == role:
-            return Response({
-                "message": "Login successful",
-                "username": user.username,
-                "role": user.profile.role
-            })
-
+            return Response({"message": "Login successful", "username": user.username, "role": user.profile.role})
         return Response({"error": "Invalid credentials"}, status=401)
 
 
 # ==================================================
-# OTP 
+# OTP / PASSWORD RECOVERY
 # ==================================================
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_forgot_password(request):
     email = request.data.get("email")
-
     user = get_object_or_404(User, email=email)
     otp = str(random.randint(100000, 999999))
-
     user.profile.otp = otp
     user.profile.save()
-
-    send_mail(
-        "SmartCafe OTP",
-        f"Your OTP is: {otp}",
-        settings.DEFAULT_FROM_EMAIL,
-        [email]
-    )
-
+    send_mail("SmartCafe OTP", f"Your OTP is: {otp}", settings.DEFAULT_FROM_EMAIL, [email])
     return Response({"message": "OTP sent"})
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def admin_reset_password(request):
-    email = request.data.get("email")
-    otp = request.data.get("otp")
-    password = request.data.get("password")
-
+    email, otp, password = request.data.get("email"), request.data.get("otp"), request.data.get("password")
     user = get_object_or_404(User, email=email)
-
     if user.profile.otp == otp:
         user.set_password(password)
         user.profile.otp = None
         user.profile.save()
         user.save()
         return Response({"message": "Password updated"})
-
     return Response({"error": "Invalid OTP"}, status=400)
 
 
 # ==================================================
-# STAFF 
+# STAFF & MENU
 # ==================================================
 class StaffManagementView(APIView):
     def get(self, request):
         staff = User.objects.filter(is_superuser=False)
         return Response(UserSerializer(staff, many=True).data)
 
-
 class StaffDetailView(APIView):
     def put(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         serializer = UserSerializer(user, data=request.data, partial=True)
-
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-
         return Response(serializer.errors, status=400)
 
-
-# ==================================================
-# MENU 
-# ==================================================
 class MenuManagementView(APIView):
     def get(self, request):
         items = MenuItem.objects.all()
         return Response(MenuItemSerializer(items, many=True).data)
 
-
 class MenuItemDetailView(APIView):
     def get(self, request, pk):
         item = get_object_or_404(MenuItem, pk=pk)
         return Response(MenuItemSerializer(item).data)
-
     def put(self, request, pk):
         item = get_object_or_404(MenuItem, pk=pk)
         serializer = MenuItemSerializer(item, data=request.data, partial=True)
-
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-
         return Response(serializer.errors, status=400)
-
     def delete(self, request, pk):
-        item = get_object_or_404(MenuItem, pk=pk)
-        item.delete()
+        get_object_or_404(MenuItem, pk=pk).delete()
         return Response({"message": "Deleted"})
 
 
 # ==================================================
-# ORDER
+# ORDER LOGIC
 # ==================================================
 class OrderListView(APIView):
     def get(self, request):
         order_type = request.query_params.get("type", "live")
-
+        # Sorting latest first (b.id - a.id logic)
         if order_type == "history":
-            orders = Order.objects.filter(status="Paid")
+            orders = Order.objects.filter(status="Paid").order_by('-id')
         else:
-            orders = Order.objects.exclude(status="Paid")
-
+            orders = Order.objects.exclude(status="Paid").order_by('-id')
         return Response(OrderSerializer(orders, many=True).data)
-
 
 class OrderDetailView(APIView):
     def get(self, request, pk):
@@ -208,143 +158,94 @@ class OrderDetailView(APIView):
 
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
+        # Capture status (Paid) and method (Cash) from Billing.jsx
         order.status = request.data.get("status", order.status)
-
+        order.payment_method = request.data.get("payment_method", order.payment_method)
         if order.status == "Paid":
             order.paid_at = timezone.now()
-
         order.save()
-        return Response({"message": "Updated"})
+        return Response({"message": "Database Updated Successfully"})
 
-
-# ==================================================
-# PLACE ORDER
-# ==================================================
 class PlaceOrderView(APIView):
     permission_classes = [AllowAny]
-
     def post(self, request):
         data = request.data
-
         with transaction.atomic():
             order = Order.objects.create(
                 table_number=data["table_number"],
                 payment_method=data.get("payment_method", "Cash"),
                 status="Pending"
             )
-
             total = 0
-
             for item in data["items"]:
                 menu = MenuItem.objects.get(id=item["id"])
-
                 OrderItem.objects.create(
-                    order=order,
-                    menu_item=menu,
-                    quantity=item["qty"],
-                    price=menu.price,
-                    instructions=item.get("instructions", "")
+                    order=order, menu_item=menu, quantity=item["qty"],
+                    price=menu.price, instructions=item.get("instructions", "")
                 )
-
                 total += menu.price * item["qty"]
-
             order.total_price = total
             order.save()
+        return Response({"message": "Order placed", "order_id": order.id})
 
-        return Response({
-            "message": "Order placed",
-            "order_id": order.id
-        })
-
-
-# ==================================================
-# TABLE CHECK
-# ==================================================
 class CheckTableStatusView(APIView):
     permission_classes = [AllowAny]
-
     def get(self, request, table_id):
-        occupied = Order.objects.filter(
-            table_number=table_id
-        ).exclude(status="Paid").exists()
-
+        occupied = Order.objects.filter(table_number=table_id).exclude(status="Paid").exists()
         return Response({"occupied": occupied})
 
 
 # ==================================================
-# ESEWA VERIFY 
+# UNIFIED ESEWA VERIFICATION (SMART LOGIC)
 # ==================================================
 class EsewaVerifyView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-
+        token = request.data.get("token")
         order_id = request.data.get("order_id")
-        status = request.data.get("status")
+        esewa_status = request.data.get("status") # For real esewa response
 
-        try:
-            order = Order.objects.get(id=order_id)
+        # 1. Handle VIVA MOCK Simulation
+        if token == "ESEWA_VIVA_SUCCESS_TOKEN":
+            order = get_object_or_404(Order, id=order_id)
+            order.status = "Paid"
+            order.payment_method = "eSewa"
+            order.save()
+            return Response({"message": "Mock Verification Success"}, status=200)
 
-            if status == "COMPLETE":
+        # 2. Handle REAL ESEWA COMPLETE Response
+        if esewa_status == "COMPLETE":
+            order = get_object_or_404(Order, id=order_id)
+            order.status = "Paid"
+            order.payment_method = "eSewa"
+            order.paid_at = timezone.now()
+            order.save()
+            return Response({"message": "Real Payment Success"})
 
-                order.status = "Paid"
-                order.payment_method = "eSewa"
-                order.paid_at = timezone.now()
-                order.save()
-
-                return Response({
-                    "message": "Payment successful"
-                })
-
-            return Response({
-                "error": "Payment failed"
-            }, status=400)
-
-        except Order.DoesNotExist:
-            return Response({
-                "error": "Order not found"
-            }, status=404)
+        return Response({"error": "Verification Failed"}, status=400)
 
 
 # ==================================================
-# SETTLE BILL
+# BILLING & FEEDBACK
 # ==================================================
 class SettleBillView(APIView):
     def patch(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         order.status = "Paid"
+        order.payment_method = "cash"
         order.paid_at = timezone.now()
         order.save()
         return Response({"message": "Bill settled"})
 
-
-class BillDetailView(APIView):
-    def get(self, request, pk):
-        order = get_object_or_404(Order, pk=pk)
-        return Response({
-            "table": order.table_number,
-            "total": float(order.total_price),
-            "vat": order.vat_amount
-        })
-
-
-# ==================================================
-# FEEDBACK
-# ==================================================
 class FeedbackView(APIView):
     permission_classes = [AllowAny]
-
     def get(self, request):
-        feedbacks = Feedback.objects.all()
+        feedbacks = Feedback.objects.all().order_by('-created_at')
         return Response(FeedbackSerializer(feedbacks, many=True).data)
-
     def post(self, request):
         order = get_object_or_404(Order, id=request.data.get("order_id"))
-
         Feedback.objects.create(
-            order=order,
-            rating=request.data.get("rating"),
-            comment=request.data.get("comment")
+            order=order, rating=request.data.get("rating"), comment=request.data.get("comment")
         )
-
         return Response({"message": "Success"})
