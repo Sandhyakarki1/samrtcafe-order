@@ -1,54 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, DollarSign, Printer, Receipt, Search, CreditCard, Banknote } from 'lucide-react';
+import { Printer, Search, CreditCard, Banknote, CheckCircle } from 'lucide-react';
 
-// Ensure this matches latest active Cloudflare Tunnel
 const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudflare.com";
 
 const Billing = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [view, setView] = useState("pending");
+  const [view, setView] = useState("active"); 
+
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/orders/`);
+      if (res.ok) {
+        const data = await res.json();
+        
+        const sortedData = data.sort((a, b) => b.id - a.id);
+        setOrders(sortedData);
+      }
+    } catch (err) {
+      console.error("Billing sync error:", err);
+    }
+  };
 
   useEffect(() => {
     fetchOrders();
     const interval = setInterval(fetchOrders, 5000); 
     return () => clearInterval(interval);
-  }, [view]);
+  }, []);
 
-  const fetchOrders = async () => {
-    try {
-      // Fetch all orders from the database
-      const res = await fetch(`${BASE_URL}/api/orders/`);
-      const data = await res.json();
-      
-      if (view === "pending") {
-        const pendingData = data.filter(o => o.status !== 'Paid');
-        
-        setOrders(pendingData.sort((a, b) => b.id - a.id));
-
-      } else {
-        const historyData = data.filter(o => o.status === 'Paid');
-        
-        setOrders(historyData.sort((a, b) => b.id - a.id));
-      }
-    } catch (err) {
-      console.error("Billing fetch error:", err);
-    }
-  };
-
-  const handleSettlePayment = async (orderId) => {
-    if (!window.confirm("Confirm Cash Received? Order will move to History.")) return;
+  const handleSettleCash = async (orderId) => {
+    if (!window.confirm("Confirm physical cash received? Order will move to History.")) return;
     try {
       const res = await fetch(`${BASE_URL}/api/orders/${orderId}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Paid", payment_method: "cash" })
       });
-      if (res.ok) {
-        alert("Payment Settled! Order is now in History.");
-        fetchOrders(); // Refresh to move the order
-      }
-    } catch (err) { alert("Server connection error."); }
+      if (res.ok) fetchOrders();
+    } catch (err) {
+      alert("Failed to settle cash.");
+    }
   };
 
   const printReceipt = (order) => {
@@ -59,27 +50,17 @@ const Billing = () => {
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(`
       <html>
-        <head><title>Receipt #${order.id}</title></head>
-        <body style="font-family: 'Courier New', monospace; padding: 20px; font-size: 14px;">
-          <h2 style="text-align:center;">SMART-CAFE</h2>
-          <p style="text-align:center;">${new Date(order.created_at).toLocaleString()}</p>
+        <body style="font-family:monospace; padding:20px;">
+          <h2 style="text-align:center">SMART-CAFE</h2>
+          <p style="text-align:center">${new Date(order.created_at).toLocaleString()}</p>
           <hr/>
-          <div style="display:flex; justify-content:space-between;">
-            <span>Table: ${order.table_number}</span><span>ID: #${order.id}</span>
-          </div>
+          <p>Table: ${order.table_number} | Order: #${order.id}</p>
           <p>Method: ${method}</p>
           <hr/>
-          <p><strong>ITEMS:</strong></p>
           <p>${order.items_text}</p>
           <hr/>
-          <div style="display:flex; justify-content:space-between;"><span>Net:</span><span>Rs. ${net}</span></div>
-          <div style="display:flex; justify-content:space-between;"><span>VAT(13%):</span><span>Rs. ${vat}</span></div>
-          <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; margin-top:5px;">
-            <span>TOTAL:</span><span>Rs. ${order.total_price}</span>
-          </div>
-          <hr/>
-          <p style="text-align:center; font-weight:bold;">PAID VIA ${method}</p>
-          <p style="text-align:center;">Visit Again!</p>
+          <p style="font-weight:bold; font-size:16px;">Total: Rs. ${order.total_price}</p>
+          <p style="text-align:center; margin-top:20px;">Paid via ${method}<br/>Thank You!</p>
         </body>
       </html>
     `);
@@ -87,25 +68,39 @@ const Billing = () => {
     setTimeout(() => { printWindow.print(); }, 500);
   };
 
+  const activeList = orders.filter(o => 
+    o.status !== 'Paid' && 
+    o.payment_method?.toLowerCase() === 'cash' &&
+    o.table_number.toString().includes(searchTerm)
+  );
+
+  const historyList = orders.filter(o => 
+    o.status === 'Paid' && 
+    o.table_number.toString().includes(searchTerm)
+  );
+
+  const currentDisplay = view === "active" ? activeList : historyList;
+
   return (
-    <div className="p-8 bg-[#fcfcfd] min-h-screen text-left animate-in fade-in duration-500">
-      {/* Header with Title and Search */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+    <div className="p-8 bg-[#fcfcfd] min-h-screen text-left font-sans animate-in fade-in duration-500">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">
-            {view === "pending" ? "Active Bills" : "Billing History"}
+          <h1 className="text-4xl font-black text-slate-800 tracking-tighter uppercase italic">
+            {view === "active" ? "Active Bills" : "Billing History"}
           </h1>
-          <p className="text-slate-500 font-medium italic text-sm">
-            {view === "pending" ? "Unpaid orders waiting for settlement" : "Completed eSewa and Cash transactions"}
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
+            {view === "active" ? `Waiting for ${activeList.length} cash settlements` : `${historyList.length} transactions completed`}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Tab Switcher */}
-          <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 shadow-inner mr-4">
+        <div className="flex items-center gap-4">
+          {/* TAB SWITCHER */}
+          <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 shadow-inner">
             <button 
-              onClick={() => setView("pending")} 
-              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === "pending" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
+              onClick={() => setView("active")} 
+              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === "active" ? "bg-white shadow-md text-emerald-600" : "text-slate-400"}`}
             >
               ACTIVE
             </button>
@@ -117,75 +112,84 @@ const Billing = () => {
             </button>
           </div>
           
-          <div className="bg-white border border-slate-200 p-2 rounded-xl flex items-center gap-2 px-4 shadow-sm">
+          {/* SEARCH BAR */}
+          <div className="bg-white border-2 border-slate-50 p-2 rounded-2xl flex items-center gap-2 px-4 shadow-sm">
             <Search size={16} className="text-slate-300" />
             <input 
               type="text" placeholder="Table #" 
-              className="outline-none text-xs font-bold w-20"
-              onChange={(e) => setSearchTerm(e.target.value)}
+              className="outline-none text-xs font-bold w-16 bg-transparent" 
+              onChange={(e) => setSearchTerm(e.target.value)} 
             />
           </div>
         </div>
       </div>
 
-      {/* Responsive Grid */}
+      {/* ORDERS GRID (Sorted Latest First) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {orders
-          .filter(o => o.table_number.toString().includes(searchTerm))
-          .map((order) => {
-             const method = (order.payment_method || 'cash').toLowerCase();
-             const isOnline = method === 'esewa' || method === 'khalti';
+        {currentDisplay.map((order) => {
+          const isEsewa = order.payment_method?.toLowerCase() === 'esewa';
 
-             return (
-              <div key={order.id} className="bg-white rounded-[40px] p-8 shadow-xl border border-white relative transition-all hover:shadow-2xl hover:-translate-y-1">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg">{order.table_number}</div>
-                  <div className="text-right">
-                    <span className={`flex items-center gap-1 justify-end text-[10px] font-black uppercase mb-1 ${isOnline ? 'text-emerald-600' : 'text-amber-600'}`}>
-                       {isOnline ? <CreditCard size={12}/> : <Banknote size={12}/>} 
-                       {order.payment_method || 'CASH'}
-                    </span>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${order.status === 'Paid' ? 'text-blue-500' : 'text-orange-500'}`}>
-                       {order.status}
-                    </p>
-                  </div>
+          return (
+            <div key={order.id} className="bg-white rounded-[45px] p-8 shadow-sm border-2 border-slate-50 relative hover:shadow-2xl transition-all group">
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg group-hover:scale-110 transition-transform">
+                  {order.table_number}
                 </div>
-
-                <div className="mb-6">
-                   <p className="text-sm font-bold text-slate-700 italic border-l-4 border-indigo-100 pl-3 leading-relaxed">{order.items_text}</p>
-                </div>
-
-                <div className="bg-slate-50 rounded-3xl p-6 mb-8 font-mono border-2 border-dashed border-slate-200">
-                    <div className="flex justify-between text-slate-900 font-black text-xl italic">
-                        <span>Total:</span>
-                        <span>Rs. {order.total_price}</span>
-                    </div>
-                </div>
-
-                <div className="flex gap-2">
-                    {/* BUTTON LOGIC */}
-                    {order.status !== 'Paid' ? (
-                      <button onClick={() => handleSettlePayment(order.id)} className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
-                        <DollarSign size={16}/> Settle Cash
-                      </button>
-                    ) : (
-                      <div className="flex-1 bg-emerald-50 text-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center border border-emerald-100 shadow-inner">
-                        <span>PAID SUCCESSFULLY</span>
-                        <span className="opacity-60 text-[8px] italic uppercase">via {order.payment_method}</span>
-                      </div>
-                    )}
-                    <button onClick={() => printReceipt(order)} className="py-4 px-6 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all shadow-sm">
-                      <Printer size={18}/>
-                    </button>
+                <div className="text-right">
+                  <span className={`flex items-center gap-1 justify-end text-[10px] font-black uppercase mb-1 ${isEsewa ? 'text-emerald-500' : 'text-orange-500'}`}>
+                    {isEsewa ? <CreditCard size={12}/> : <Banknote size={12}/>} 
+                    {order.payment_method || 'CASH'}
+                  </span>
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                    Order #{order.id} • {order.status}
+                  </p>
                 </div>
               </div>
-            );
-          })}
+
+              <div className="bg-slate-50/50 rounded-3xl p-6 mb-8 border border-slate-50 min-h-[90px]">
+                <p className="text-xs font-bold text-slate-600 italic leading-relaxed">{order.items_text}</p>
+              </div>
+
+              <div className="flex justify-between items-center mb-10 px-2">
+                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Bill</p>
+                 <p className="text-3xl font-black text-slate-900 tracking-tighter">Rs. {order.total_price}</p>
+              </div>
+
+              <div className="flex gap-2">
+                {/* 
+                   If the view is ACTIVE, we show the Settle button for Cash.
+                   If the view is HISTORY, we show a success badge.
+                */}
+                {view === "active" ? (
+                  <button 
+                    onClick={() => handleSettleCash(order.id)} 
+                    className="flex-1 bg-[#00D161] text-white py-4 rounded-2xl font-black text-xs uppercase shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all"
+                  >
+                    <CheckCircle size={16}/> Settle Cash
+                  </button>
+                ) : (
+                  <div className="flex-1 bg-emerald-50 text-emerald-600 py-4 rounded-2xl font-black text-[10px] uppercase flex flex-col items-center justify-center border border-emerald-100">
+                    <span>Paid Successfully</span>
+                    <span className="opacity-50 text-[7px] italic">via {order.payment_method?.toUpperCase()}</span>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => printReceipt(order)} 
+                  className="py-4 px-6 rounded-2xl bg-slate-100 text-slate-400 hover:bg-slate-200 transition-all shadow-sm"
+                  title="Print Bill"
+                >
+                  <Printer size={20}/>
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
-      
-      {orders.length === 0 && (
-        <div className="text-center py-24 bg-white rounded-[40px] border-2 border-dashed border-slate-100 mx-auto max-w-xl">
-          <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">No orders found in this section.</p>
+
+      {currentDisplay.length === 0 && (
+        <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-slate-50">
+          <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">No records in this section</p>
         </div>
       )}
     </div>
