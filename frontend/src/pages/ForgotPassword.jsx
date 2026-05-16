@@ -9,7 +9,7 @@ function ForgotPassword() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const API_BASE_URL = "https://call-combination-instead-ranging.trycloudflare.com"; 
+  const API_BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudflare.com"; 
 
   const handleSendOTP = async () => {
     setMessage("");
