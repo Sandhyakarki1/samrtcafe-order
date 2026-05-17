@@ -97,9 +97,28 @@ class StaffManagementView(APIView):
         staff = User.objects.filter(is_superuser=False)
         return Response(UserSerializer(staff, many=True).data)
 
+    #  This makes the "Add Staff" button work
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class StaffDetailView(APIView):
+    # This handles the Edit Details button
     def put(self, request, pk):
         user = get_object_or_404(User, pk=pk)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    #  This makes the Deactivate/Toggle Status button work
+    def patch(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        # partial=True allows changing JUST the is_active field
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
