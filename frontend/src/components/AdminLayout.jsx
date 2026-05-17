@@ -3,17 +3,51 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, UtensilsCrossed, 
   ClipboardList, MessageSquare, QrCode, ReceiptText,
-  LogOut, ChevronDown, User, Settings, X // Added X for closing modal
+  LogOut, ChevronDown, User, Settings, X 
 } from 'lucide-react';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  // --- NEW STATE FOR THE MODAL ---
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // --- 1. NEW STATE FOR AUTOMATIC USER DATA ---
+  const [currentUser, setCurrentUser] = useState({
+    username: 'Admin',
+    email: 'sandhyakarki506@gmail.com' 
+  });
   
+  // Get initial data from localStorage
   const adminUser = JSON.parse(localStorage.getItem("admin_user")) || {};
+
+  // --- 2. FETCH LATEST DATA AUTOMATICALLY ---
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // This talks to  Django backend to get the latest info
+        const response = await fetch("http://127.0.0.1:8000/api/profile/"); 
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data);
+        } else {
+          // If API fails, use local storage data
+          setCurrentUser({
+            username: adminUser.username || 'Admin',
+            email: adminUser.email || 'sandhyakarki506@gmail.com'
+          });
+        }
+      } catch (err) {
+        console.log("Using local data fallback");
+        setCurrentUser({
+          username: adminUser.username || 'Admin',
+          email: adminUser.email || 'sandhyakarki506@gmail.com'
+        });
+      }
+    };
+
+    fetchUserData();
+  }, [adminUser.username, adminUser.email]);
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -43,7 +77,6 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans">
-      {/* Sidebar */}
       <aside className="w-64 bg-[#1e293b] text-white flex flex-col z-40 shadow-2xl">
         <div className="p-8">
           <h2 className="text-2xl font-black tracking-tighter italic border-b border-slate-700 pb-4 flex items-center gap-2">
@@ -61,12 +94,11 @@ const AdminLayout = () => {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-slate-100 h-24 flex items-center justify-between px-10 z-30 shadow-sm">
           <div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">{getPageTitle()}</h2>
-            <p className="text-[11px] text-indigo-600 font-black uppercase tracking-[0.2em] mt-2">
-              Welcome back, {adminUser.username || "Admin"}
+            <p className="text-[11px] text-indigo-600 font-black uppercase tracking-[0.2em] mt-2 italic">
+              Welcome back, {currentUser.username}
             </p>
           </div>
           
@@ -77,27 +109,26 @@ const AdminLayout = () => {
                 className="flex items-center gap-3 p-1.5 pr-4 bg-slate-50 border border-slate-100 rounded-2xl hover:shadow-md transition-all active:scale-95 group"
               >
                 <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg uppercase">
-                  {(adminUser.username || "A").charAt(0)}
+                  {currentUser.username.charAt(0)}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-black text-slate-800 leading-none capitalize">{adminUser.username || "Admin"}</p>
+                  <p className="text-xs font-black text-slate-800 leading-none capitalize">{currentUser.username}</p>
                   <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">Super Admin</p>
                 </div>
                 <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown Menu */}
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white rounded-[24px] shadow-2xl border border-slate-50 py-3 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-5 py-3 border-b border-slate-50 mb-2">
-                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Account Email</p>
-                    <p className="text-xs font-bold text-slate-700 truncate">{adminUser.email || "No Email Provided"}</p>
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-[24px] shadow-2xl border border-slate-50 py-3 z-50 animate-in fade-in slide-in-from-top-2 text-left">
+                  <div className="px-5 py-3 border-b border-slate-50 mb-2 text-left">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest text-left">Account Email</p>
+                    {/* AUTOMATIC EMAIL IN DROPDOWN */}
+                    <p className="text-xs font-bold text-slate-700 truncate text-left">{currentUser.email}</p>
                   </div>
                   
-                  {/* UPDATED PROFILE BUTTON */}
                   <button 
                     onClick={() => { setIsModalVisible(true); setIsProfileOpen(false); }}
-                    className="flex items-center gap-3 px-5 py-2.5 w-full text-slate-600 hover:bg-indigo-50 text-sm font-bold transition-all text-left"
+                    className="flex items-center gap-3 px-5 py-2.5 w-full text-slate-600 hover:bg-indigo-50 text-sm font-bold transition-all"
                   >
                     <User size={16}/> Profile
                   </button>
@@ -111,9 +142,8 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-[#f8fafc]">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto text-left">
             <Outlet /> 
           </div>
         </main>
@@ -133,18 +163,19 @@ const AdminLayout = () => {
 
             <div className="text-center">
               <div className="w-24 h-24 bg-indigo-600 text-white rounded-[30px] flex items-center justify-center text-4xl font-black mx-auto mb-6 shadow-xl">
-                {(adminUser.username || "A").charAt(0)}
+                {currentUser.username.charAt(0)}
               </div>
               
               <h2 className="text-2xl font-black text-slate-800 tracking-tighter capitalize">
-                {adminUser.username || "Admin"}
+                {currentUser.username}
               </h2>
               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-8">Super Admin</p>
               
               <div className="bg-slate-50 rounded-3xl p-6 text-left space-y-4 mb-8">
                 <div>
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
-                  <p className="text-sm font-bold text-slate-700 truncate">{adminUser.email || "Not Provided"}</p>
+                  {/* AUTOMATIC EMAIL IN MODAL */}
+                  <p className="text-sm font-bold text-slate-700 truncate">{currentUser.email}</p>
                 </div>
                 <div>
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Security</p>
