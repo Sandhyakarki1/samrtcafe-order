@@ -4,27 +4,38 @@ import { Star, Quote, MessageSquare } from 'lucide-react';
 const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
 
-  const formatNepalTime = (dateString) => {
-    if (!dateString) return "Just now";
+  // --- 1. IMPROVED NEPAL TIME LOGIC ---
+  const formatNepalTime = (f) => {
+    // Try to find the date in any common field name
+    const rawDate = f.created_at || f.timestamp || f.formatted_date || f.date;
+
+    if (!rawDate) return "Just now";
     
-    const options = {
-      timeZone: 'Asia/Kathmandu',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    };
-    
-    // We use the raw date from the backend to calculate Nepal time (+5:45)
-    return new Date(dateString).toLocaleString('en-US', options);
+    try {
+      const dateObj = new Date(rawDate);
+      
+      // If it's a valid date object, convert to Nepal Time (+5:45)
+      if (!isNaN(dateObj.getTime())) {
+        return new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kathmandu',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }).format(dateObj);
+      }
+      return rawDate;
+    } catch (e) {
+      return rawDate; 
+    }
   };
 
   const fetchFeedback = () => {
     fetch("http://127.0.0.1:8000/api/feedback/")
       .then(res => res.json())
       .then(data => {
-        // --- 2. SORTING LOGIC: Latest ID First ---
+        // --- 2. SORTING LOGIC: Newest ID First ---
         const sortedData = data.sort((a, b) => b.id - a.id);
         setFeedbacks(sortedData);
       })
@@ -33,14 +44,13 @@ const FeedbackManagement = () => {
 
   useEffect(() => {
     fetchFeedback();
-    // Auto-refresh feedback every 30 seconds
     const interval = setInterval(fetchFeedback, 30000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="animate-in fade-in duration-500 text-left">
-      <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tighter italic">CUSTOMER FEEDBACK</h1>
+      <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tighter italic uppercase">Customer Feedback</h1>
       <p className="text-slate-500 mb-10 font-medium uppercase text-[10px] tracking-widest">Real-time reviews from your tables</p>
 
       {feedbacks.length === 0 ? (
@@ -76,15 +86,15 @@ const FeedbackManagement = () => {
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Source</p>
                     <div className="flex items-center gap-2">
                        <span className="bg-slate-900 text-white text-[10px] font-black px-2 py-0.5 rounded-md">T{f.table_number}</span>
-                       <span className="text-xs font-bold text-slate-800">Order #{f.order}</span>
+                       <span className="text-xs font-bold text-slate-800 uppercase">Order #{f.order}</span>
                     </div>
                  </div>
                  
-                 {/* NEPAL TIME DISPLAY */}
+                 {/* UPDATED NEPAL TIME DISPLAY */}
                  <div className="text-right">
                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Time (NST)</p>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                       {formatNepalTime(f.created_at || f.timestamp)}
+                       {formatNepalTime(f)}
                     </span>
                  </div>
               </div>
