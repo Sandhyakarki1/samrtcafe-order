@@ -38,7 +38,7 @@ function App() {
 
         {/* ================= AUTH ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/signp" element={<AdminSignup/>} />
+        <Route path="/admin/signup" element={<AdminSignup/>} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="/admin/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/reset-password" element={<ResetPassword />} />
