@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, Play, CheckCircle, Loader2 } from 'lucide-react';
+import { ChefHat, Play, CheckCircle } from 'lucide-react';
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "https://reviews-handles-str-outreach.trycloudflare.com"; 
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
@@ -22,6 +22,7 @@ export default function KitchenDashboard() {
   };
 
   const updateStatus = async (id, newStatus) => {
+    console.log(`Attempting to update Order ${id} to ${newStatus}`); // For debugging
     try {
       const res = await fetch(`${BASE_URL}/api/orders/${id}/status/`, {
         method: "PUT", 
@@ -30,11 +31,13 @@ export default function KitchenDashboard() {
       });
       
       if (res.ok) {
-        await fetchOrders(); // Wait for the fetch to finish before re-rendering
+        await fetchOrders(); 
       } else {
-        console.error("Failed to update status");
+        const errorData = await res.text();
+        alert("Failed to update: " + errorData); 
       }
     } catch (err) {
+      alert("Network Error: Make sure your BASE_URL is correct!");
       console.error("Update error:", err);
     }
   };
@@ -54,9 +57,9 @@ export default function KitchenDashboard() {
         <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-4 py-2 rounded-full uppercase tracking-widest animate-pulse">Live Feed</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
         {orders.map(order => (
-          <div key={order.id} className="bg-white p-7 rounded-[40px] shadow-sm border-2 border-orange-50 flex flex-col h-full hover:shadow-xl transition-all">
+          <div key={order.id} className="bg-white p-7 rounded-[40px] shadow-sm border-2 border-orange-50 flex flex-col h-full hover:shadow-xl transition-all text-left">
             <div className="flex justify-between items-start mb-6">
                 <div>
                   <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest block mb-1">Table</span>
@@ -68,8 +71,7 @@ export default function KitchenDashboard() {
                 </div>
             </div>
 
-            <div className="bg-slate-50 p-5 rounded-3xl mb-6 flex-1 border border-slate-100">
-               {/* Show Status Badge so Chef knows current state */}
+            <div className="bg-slate-50 p-5 rounded-3xl mb-6 flex-1 border border-slate-100 text-left">
                <div className={`inline-block px-2 py-1 rounded-lg text-[9px] font-black uppercase mb-3 ${
                  order.status === 'Preparing' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'
                }`}>
@@ -82,14 +84,14 @@ export default function KitchenDashboard() {
               {order.status === 'Pending' ? (
                 <button 
                   onClick={() => updateStatus(order.id, 'Preparing')} 
-                  className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-lg shadow-orange-100"
+                  className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-lg shadow-orange-100 active:scale-95"
                 >
-                  <Play size={16} fill="white"/> Start Cooking
+                  <Play size={16} fill="white"/> Preparing
                 </button>
               ) : (
                 <button 
                   onClick={() => updateStatus(order.id, 'Ready')} 
-                  className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100"
+                  className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100 active:scale-95"
                 >
                   <CheckCircle size={18}/> Mark Ready
                 </button>
