@@ -4,28 +4,32 @@ import { Star, Quote, MessageSquare } from 'lucide-react';
 const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
 
-  // --- FINAL FIXED NEPAL TIME LOGIC ---
+  // --- FINAL BULLETPROOF NEPAL TIME LOGIC ---
   const formatNepalTime = (f) => {
-    // 1. Get the raw date string from Django
+    // 1. Get the raw date string from  API
     let rawDate = f.created_at || f.timestamp || f.formatted_date || f.date;
     if (!rawDate) return "Just now";
     
     try {
       let dateStr = String(rawDate).trim();
 
+      if (dateStr.includes(' ') && !dateStr.includes('T')) {
+        dateStr = dateStr.replace(' ', 'T');
+      }
+
       if (!dateStr.includes('Z') && !dateStr.includes('+')) {
-        dateStr = dateStr.replace(' ', 'T') + 'Z';
+        dateStr = dateStr + 'Z';
       }
 
       const dateObj = new Date(dateStr);
       
-      // 3. Apply the Kathmandu Timezone conversion
+      // 3. Convert to Nepal Time (+5:45)
       if (!isNaN(dateObj.getTime())) {
         return new Intl.DateTimeFormat('en-US', {
           timeZone: 'Asia/Kathmandu',
           month: 'short',
           day: 'numeric',
-          hour: 'numeric', // Using 'numeric' removes leading zeros 
+          hour: 'numeric', // Using 'numeric' gives 
           minute: '2-digit',
           hour12: true
         }).format(dateObj).toUpperCase(); 
@@ -41,7 +45,10 @@ const FeedbackManagement = () => {
     fetch("http://127.0.0.1:8000/api/feedback/")
       .then(res => res.json())
       .then(data => {
-        //  Newest ID First so latest review is at top left
+        // Log the data to console so you can see what the backend is sending
+        console.log("Feedback Data from Backend:", data);
+        
+        // SORTING: Newest ID First
         const sortedData = data.sort((a, b) => b.id - a.id);
         setFeedbacks(sortedData);
       })
@@ -62,7 +69,7 @@ const FeedbackManagement = () => {
       {feedbacks.length === 0 ? (
         <div className="bg-white p-20 text-center rounded-[40px] border border-dashed text-slate-200">
            <MessageSquare size={48} className="mx-auto mb-4 opacity-20" />
-           <p className="font-black uppercase tracking-widest text-xs text-left">No feedback received yet</p>
+           <p className="font-black uppercase tracking-widest text-xs">No feedback received yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -87,7 +94,7 @@ const FeedbackManagement = () => {
 
               <div className="flex justify-between items-end pt-6 border-t border-slate-50">
                  <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Source</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">Source</p>
                     <div className="flex items-center gap-2">
                        <span className="bg-slate-900 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase">T{f.table_number}</span>
                        <span className="text-xs font-bold text-slate-800 uppercase tracking-tighter">Order #{f.order}</span>
@@ -95,7 +102,7 @@ const FeedbackManagement = () => {
                  </div>
                  
                  <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Nepal Time (NST)</p>
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1 text-right">Nepal Time (NST)</p>
                    
                     <span className="text-[11px] font-black text-indigo-600 uppercase tracking-tighter">
                        {formatNepalTime(f)}
