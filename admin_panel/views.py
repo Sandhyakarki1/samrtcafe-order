@@ -133,10 +133,18 @@ class MenuManagementView(APIView):
         items = MenuItem.objects.all()
         return Response(MenuItemSerializer(items, many=True).data)
 
+    def post(self, request):
+        serializer = MenuItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class MenuItemDetailView(APIView):
     def get(self, request, pk):
         item = get_object_or_404(MenuItem, pk=pk)
         return Response(MenuItemSerializer(item).data)
+    
     def put(self, request, pk):
         item = get_object_or_404(MenuItem, pk=pk)
         serializer = MenuItemSerializer(item, data=request.data, partial=True)
@@ -144,10 +152,10 @@ class MenuItemDetailView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+    
     def delete(self, request, pk):
         get_object_or_404(MenuItem, pk=pk).delete()
         return Response({"message": "Deleted"})
-
 # ==================================================
 # 5. ORDER & TABLE LOGIC
 # ==================================================
