@@ -4,40 +4,25 @@ import { Star, Quote, MessageSquare } from 'lucide-react';
 const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
 
-  // --- FINAL BULLETPROOF NEPAL TIME LOGIC ---
   const formatNepalTime = (f) => {
-    // 1. Get the raw date string from  API
-    let rawDate = f.created_at || f.timestamp || f.formatted_date || f.date;
-    if (!rawDate) return "Just now";
+    let raw = f.created_at || f.timestamp || f.formatted_date || f.date;
+    if (!raw) return "Just now";
     
     try {
-      let dateStr = String(rawDate).trim();
-
-      if (dateStr.includes(' ') && !dateStr.includes('T')) {
-        dateStr = dateStr.replace(' ', 'T');
-      }
-
-      if (!dateStr.includes('Z') && !dateStr.includes('+')) {
-        dateStr = dateStr + 'Z';
-      }
-
-      const dateObj = new Date(dateStr);
+      let date = new Date(raw);
       
-      // 3. Convert to Nepal Time (+5:45)
-      if (!isNaN(dateObj.getTime())) {
-        return new Intl.DateTimeFormat('en-US', {
-          timeZone: 'Asia/Kathmandu',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric', // Using 'numeric' gives 
-          minute: '2-digit',
-          hour12: true
-        }).format(dateObj).toUpperCase(); 
-      }
+      date.setMinutes(date.getMinutes() + 345);
+
+      const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      let h = date.getHours();
+      let m = date.getMinutes();
+      let ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      m = m < 10 ? '0' + m : m;
       
-      return rawDate; 
+      return `${months[date.getMonth()]} ${date.getDate()}, ${h}:${m} ${ampm}`;
     } catch (e) {
-      return rawDate; 
+      return String(raw);
     }
   };
 
@@ -45,10 +30,6 @@ const FeedbackManagement = () => {
     fetch("http://127.0.0.1:8000/api/feedback/")
       .then(res => res.json())
       .then(data => {
-        // Log the data to console so you can see what the backend is sending
-        console.log("Feedback Data from Backend:", data);
-        
-        // SORTING: Newest ID First
         const sortedData = data.sort((a, b) => b.id - a.id);
         setFeedbacks(sortedData);
       })
@@ -76,22 +57,14 @@ const FeedbackManagement = () => {
           {feedbacks.map((f) => (
             <div key={f.id} className="bg-white p-8 rounded-[40px] shadow-sm border border-slate-50 relative group hover:border-indigo-200 transition-all hover:-translate-y-1 duration-300">
               <Quote className="absolute top-6 right-8 text-slate-50 w-16 h-16 group-hover:text-indigo-50 transition-colors" />
-              
               <div className="flex gap-1 mb-4">
                 {[1, 2, 3, 4, 5].map(n => (
-                  <Star 
-                    key={n} 
-                    size={14} 
-                    fill={n <= f.rating ? "#fbbf24" : "none"} 
-                    stroke={n <= f.rating ? "#fbbf24" : "#e2e8f0"} 
-                  />
+                  <Star key={n} size={14} fill={n <= f.rating ? "#fbbf24" : "none"} stroke={n <= f.rating ? "#fbbf24" : "#e2e8f0"} />
                 ))}
               </div>
-
               <p className="text-slate-700 font-bold italic text-lg leading-relaxed mb-8 relative z-10 min-h-[60px]">
                 "{f.comment || 'No comment provided'}"
               </p>
-
               <div className="flex justify-between items-end pt-6 border-t border-slate-50">
                  <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-left">Source</p>
@@ -100,10 +73,8 @@ const FeedbackManagement = () => {
                        <span className="text-xs font-bold text-slate-800 uppercase tracking-tighter">Order #{f.order}</span>
                     </div>
                  </div>
-                 
                  <div className="text-right">
                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1 text-right">Nepal Time (NST)</p>
-                   
                     <span className="text-[11px] font-black text-indigo-600 uppercase tracking-tighter">
                        {formatNepalTime(f)}
                     </span>
