@@ -6,7 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 
-const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudflare.com";
+const BASE_URL = "https://reviews-handles-str-outreach.trycloudflare.com";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);

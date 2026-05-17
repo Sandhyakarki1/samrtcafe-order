@@ -4,7 +4,7 @@ import CryptoJS from "crypto-js";
 import { ShoppingBag, ArrowLeft, Trash2, CreditCard, ShieldCheck, Banknote, Loader2 } from "lucide-react";
 
 // Update this to  current tunnel
-const BASE_URL = "https://philosophy-serious-grateful-implementation.trycloudflare.com";
+const BASE_URL = "https://reviews-handles-str-outreach.trycloudflare.com";
 
 export default function CustomerCart() {
   const navigate = useNavigate();
