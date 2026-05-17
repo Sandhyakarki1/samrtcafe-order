@@ -12,7 +12,7 @@ export default function KitchenDashboard() {
       const res = await fetch(`${BASE_URL}/api/orders/`);
       const data = await res.json();
       
-      // --- LOGIC: Filter for Kitchen AND Sort by Latest ID ---
+      // --- Filter for Kitchen AND Sort by Latest ID ---
       const kitchenOrders = data
         .filter(o => o.status === 'Pending' || o.status === 'Preparing' || o.status === 'Paid')
         .sort((a, b) => b.id - a.id); 

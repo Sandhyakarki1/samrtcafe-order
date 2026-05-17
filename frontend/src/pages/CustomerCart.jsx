@@ -19,7 +19,7 @@ export default function CustomerCart() {
 
   const total = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
-  // --- YOUR WORKING ESEWA LOGIC ---
+  // ---  WORKING ESEWA LOGIC ---
   const handleEsewaPayment = (orderId, amount) => {
     const transaction_uuid = `${orderId}-${Date.now()}`;
     const product_code = "EPAYTEST";
