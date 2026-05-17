@@ -13,7 +13,7 @@ class ProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (ProfileInline, )
-    # UPDATED: Added 'is_active' to see who is deactivated 
+    #  Added 'is_active' to see who is deactivated 
     list_display = ('username', 'email', 'get_role', 'is_active', 'is_staff')
     list_filter = ('profile__role', 'is_active', 'is_staff')
     
@@ -46,7 +46,7 @@ class MenuItemAdmin(admin.ModelAdmin):
     stock_status.short_description = 'Availability'
 
 # ==================================================
-# ORDER MANAGEMENT (Latest First & Payment Method)
+# ORDER MANAGEMENT 
 # ==================================================
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -55,7 +55,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    # UPDATED: Added 'payment_method' to display
+    # Added 'payment_method' to display
     list_display = ('id', 'table_number', 'status', 'get_payment_icon', 'total_price', 'created_at')
     
     # Allows admin to filter by Payment Method as well

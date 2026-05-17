@@ -98,7 +98,7 @@ class Order(models.Model):
     )
 
     # ==================================================
-    # PAYMENT FIELDS (ESEWA READY)
+    # PAYMENT FIELDS (ESEWA )
     # ==================================================
     payment_method = models.CharField(
         max_length=20,

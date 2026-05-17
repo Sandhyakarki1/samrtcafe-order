@@ -45,7 +45,7 @@ export default function CustomerOrderTracking() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
       
-      {/* VIEW 1: LIVE TRACKING (Shows until food is Served) */}
+      {/*  LIVE TRACKING (Shows until food is Served) */}
       {order.status !== 'Served' && !submitted ? (
         <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md text-center animate-in zoom-in duration-500">
           <h1 className="text-2xl font-black text-slate-800 mb-8 uppercase tracking-tight">Order Status</h1>
@@ -64,7 +64,7 @@ export default function CustomerOrderTracking() {
           </div>
         </div>
 
-      /* VIEW 2: FEEDBACK (Automatically appears when status is Served) */
+      /* FEEDBACK (Automatically appears when status is Served) */
       ) : !submitted ? (
         <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md animate-in slide-in-from-bottom duration-700 text-left">
           <CheckCircle className="text-emerald-500 mb-4" size={32} />
@@ -86,7 +86,7 @@ export default function CustomerOrderTracking() {
           )}
         </div>
 
-      /* VIEW 3: THANK YOU */
+      /*  THANK YOU */
       ) : (
         <div className="text-center animate-in zoom-in duration-500">
            <MessageSquare size={64} className="text-indigo-600 mx-auto mb-6"/>

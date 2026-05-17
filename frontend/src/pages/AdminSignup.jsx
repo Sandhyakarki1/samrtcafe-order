@@ -106,12 +106,12 @@ const AdminSignup = () => {
           <form onSubmit={requestOTP} className="space-y-4">
             <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
-                <input type="text" required placeholder="admin_name" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
+                <input type="text" required placeholder=" " className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
                        onChange={(e)=>setFormData({...formData, username: e.target.value})} />
             </div>
             <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Gmail Address</label>
-                <input type="email" required placeholder="example@gmail.com" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
+                <input type="email" required placeholder=" " className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
                        onChange={(e)=>setFormData({...formData, email: e.target.value})} />
             </div>
             <div className="grid grid-cols-2 gap-4">

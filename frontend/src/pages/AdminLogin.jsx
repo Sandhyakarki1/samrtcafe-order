@@ -53,7 +53,7 @@ function AdminLogin() {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gmail Address</label>
             <input
               type="email"
-              placeholder="name@gmail.com"
+              placeholder=" "
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 mt-1 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold"
@@ -65,7 +65,7 @@ function AdminLogin() {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder=" "
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 mt-1 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold"

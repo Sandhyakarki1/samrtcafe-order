@@ -81,7 +81,7 @@ const Billing = () => {
     o.table_number.toString().includes(searchTerm)
   );
 
-  // 2. HISTORY: Show EVERYTHING that is PAID + ALL eSewa orders 
+  // 2. Show EVERYTHING that is PAID + ALL eSewa orders 
  
   const historyList = orders.filter(o => 
     (o.status.toLowerCase() === 'paid' || o.payment_method?.toLowerCase() === 'esewa') && 

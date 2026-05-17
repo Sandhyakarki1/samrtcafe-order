@@ -17,15 +17,11 @@ urlpatterns = [
     # Root URL
     path('', home),
 
-    # Main Django Admin (accessible via /djadmin/)
     path('djadmin/', admin.site.urls),  
 
-    # ALL API Routes are prefixed with /api/
-    # This means your eSewa link is: /api/esewa/verify/
     path('api/', include('admin_panel.urls')),  
 ]
 
-# Serve media items (Food Images) during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, 
                           document_root=settings.MEDIA_ROOT)

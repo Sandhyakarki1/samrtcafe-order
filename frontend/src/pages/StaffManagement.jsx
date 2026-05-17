@@ -32,7 +32,7 @@ const StaffManagement = () => {
     }
   };
 
-  // NEW: Function to Toggle Active/Inactive status instead of deleting
+  // Function to Toggle Active/Inactive status instead of deleting
   const handleToggleStatus = async (staff) => {
     const action = staff.isActive ? "deactivate" : "activate";
     if (window.confirm(`Are you sure you want to ${action} ${staff.name}?`)) {

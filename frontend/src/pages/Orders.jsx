@@ -88,12 +88,7 @@ const Orders = () => {
       refreshData();
     }
   };
-
-  // --- UPDATED FILTERS ---
-  // Kitchen Queue: Items currently being processed
   const liveQueue = orders.filter(o => ['Pending', 'Preparing', 'Ready'].includes(o.status));
-  
-  // 2. Served Tables: ONLY show orders that are 'Served' AND 'Cash'
   
   const servedTables = orders.filter(o => 
     o.status === 'Served' && o.payment_method === 'cash'
