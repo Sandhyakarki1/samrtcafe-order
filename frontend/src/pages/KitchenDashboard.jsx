@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, Play, CheckCircle, Loader2 } from 'lucide-react';
+import { ChefHat, Play, CheckCircle, MessageSquare, Loader2 } from 'lucide-react';
 
+// Using a consistent BASE_URL logic
 const BASE_URL = "http://127.0.0.1:8000";
 
 export default function KitchenDashboard() {
@@ -11,8 +12,9 @@ export default function KitchenDashboard() {
       const res = await fetch(`${BASE_URL}/api/orders/`);
       const data = await res.json();
       
+      // --- LOGIC: Filter for Kitchen AND Sort by Latest ID ---
       const kitchenOrders = data
-        .filter(o => ['Pending', 'Preparing', 'Ready'].includes(o.status))
+        .filter(o => o.status === 'Pending' || o.status === 'Preparing' || o.status === 'Paid')
         .sort((a, b) => b.id - a.id); 
         
       setOrders(kitchenOrders);
@@ -22,24 +24,12 @@ export default function KitchenDashboard() {
   };
 
   const updateStatus = async (id, newStatus) => {
-    try {
-      // --- FIXED URL ---
-      // Changed from /api/orders/${id}/ to /api/orders/${id}/status/ 
-      // to match the working code in your Orders.jsx file.
-      const res = await fetch(`${BASE_URL}/api/orders/${id}/status/`, {
-        method: "PUT", // Matches your working Orders.jsx logic
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus })
-      });
-      
-      if (res.ok) {
-        await fetchOrders(); // Wait for the fetch to finish before re-rendering
-      } else {
-        console.error("Failed to update status");
-      }
-    } catch (err) {
-      console.error("Update error:", err);
-    }
+    await fetch(`${BASE_URL}/api/orders/${id}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    fetchOrders(); 
   };
 
   useEffect(() => { 
@@ -51,8 +41,8 @@ export default function KitchenDashboard() {
   return (
     <div className="p-8 bg-[#FFF9F5] min-h-screen text-left font-sans">
       <div className="flex justify-between items-center mb-10">
-        <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 italic uppercase tracking-tighter">
-          <ChefHat size={32} className="text-orange-500"/> Kitchen Board
+        <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 italic">
+          <ChefHat size={32} className="text-orange-500"/> KITCHEN BOARD
         </h1>
         <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-4 py-2 rounded-full uppercase tracking-widest animate-pulse">Live Feed</span>
       </div>
@@ -72,27 +62,21 @@ export default function KitchenDashboard() {
             </div>
 
             <div className="bg-slate-50 p-5 rounded-3xl mb-6 flex-1 border border-slate-100">
-               {/* Show Status Badge so Chef knows current state */}
-               <div className={`inline-block px-2 py-1 rounded-lg text-[9px] font-black uppercase mb-3 ${
-                 order.status === 'Preparing' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'
-               }`}>
-                 {order.status}
-               </div>
                <p className="text-sm font-bold text-slate-700 leading-relaxed italic">{order.items_text}</p>
             </div>
 
             <div className="flex gap-3">
-              {order.status === 'Pending' ? (
+              {(order.status === 'Pending' || order.status === 'Paid') ? (
                 <button 
                   onClick={() => updateStatus(order.id, 'Preparing')} 
-                  className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-lg shadow-orange-100"
+                  className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-600 active:scale-95 transition-all shadow-lg shadow-orange-100"
                 >
                   <Play size={16} fill="white"/> Start Cooking
                 </button>
               ) : (
                 <button 
                   onClick={() => updateStatus(order.id, 'Ready')} 
-                  className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100"
+                  className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-lg shadow-emerald-100"
                 >
                   <CheckCircle size={18}/> Mark Ready
                 </button>
@@ -104,7 +88,7 @@ export default function KitchenDashboard() {
 
       {orders.length === 0 && (
         <div className="text-center py-32 border-4 border-dashed rounded-[60px] border-orange-100">
-           <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs italic">All orders completed</p>
+           <p className="text-slate-300 font-black uppercase tracking-[0.4em] text-xs">All orders completed</p>
         </div>
       )}
     </div>
