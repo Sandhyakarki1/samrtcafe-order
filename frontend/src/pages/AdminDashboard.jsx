@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Utensils, ClipboardList, Clock, AlertTriangle, ArrowRight, CreditCard, Banknote } from 'lucide-react';
+import { Users, Utensils, ClipboardList, Clock, AlertTriangle, ArrowRight, CreditCard, Banknote, User } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ total_staff: 0, total_menu: 0, total_orders: 0, pending_orders: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]); 
+  
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
-      //  Fetch Stats from Django API
       const statsRes = await fetch("http://127.0.0.1:8000/api/stats/");
       const statsData = await statsRes.json();
       
-      //  Fetch Orders for the activity table
       const ordersRes = await fetch("http://127.0.0.1:8000/api/orders/");
       const ordersData = await ordersRes.json();
 
-      //  Fetch Menu to check for Low Stock
       const menuRes = await fetch("http://127.0.0.1:8000/api/menu/");
       const menuData = await menuRes.json();
 
@@ -42,12 +41,14 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="animate-in fade-in duration-700 p-2">
+    <div className="animate-in fade-in duration-700 p-2 relative">
+      
       {/* --- STAT CARDS --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 text-left">
         <StatCard icon={<Users className="text-blue-600"/>} label="Total Staff" value={stats.total_staff} />
         <StatCard icon={<Utensils className="text-emerald-500"/>} label="Menu Items" value={stats.total_menu} />
         <StatCard icon={<ClipboardList className="text-indigo-600"/>} label="Total Orders" value={stats.total_orders} />
+        {/* Fixed 4th Card Labels */}
         <StatCard icon={<Clock className="text-orange-500"/>} label="Pending Prep" value={stats.pending_orders} />
       </div>
 
@@ -57,7 +58,16 @@ const AdminDashboard = () => {
         {/* RECENT ACTIVITY TABLE */}
         <div className="lg:col-span-2 bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
-            <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Live Order Stream</h2>
+            <div className="flex items-center gap-4">
+               <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Live Order Stream</h2>
+               {/* --- ADDED THIS BUTTON TO TRIGGER PROFILE --- */}
+               <button 
+                 onClick={() => setIsProfileOpen(true)}
+                 className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black uppercase hover:bg-indigo-100 transition-all"
+               >
+                 View My Profile
+               </button>
+            </div>
             <span className="text-[10px] font-bold text-slate-400">Auto-refreshing...</span>
           </div>
           <div className="p-4 overflow-x-auto">
@@ -66,7 +76,7 @@ const AdminDashboard = () => {
                 <tr className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
                   <th className="px-6 py-4">Order ID</th>
                   <th className="px-6 py-4">Table</th>
-                  <th className="px-6 py-4">Payment</th> {/* New Column */}
+                  <th className="px-6 py-4">Payment</th> 
                   <th className="px-6 py-4">Status</th>
                 </tr>
               </thead>
@@ -74,7 +84,6 @@ const AdminDashboard = () => {
                 {recentOrders.map((order) => (
                   <tr key={order.id} className="group hover:bg-indigo-50/20 transition-all">
                     <td className="px-6 py-5 font-black text-slate-700 text-sm">#00{order.id}</td>
-                    
                     <td className="px-6 py-5">
                         <div className="flex items-center gap-2">
                            <div className="w-7 h-7 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black text-[10px]">
@@ -83,8 +92,6 @@ const AdminDashboard = () => {
                            <span className="font-bold text-slate-400 text-xs uppercase tracking-tighter">Table</span>
                         </div>
                     </td>
-
-                    {/* Payment Method Badge */}
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2">
                         {order.payment_method === 'khalti' ? (
@@ -98,7 +105,6 @@ const AdminDashboard = () => {
                         )}
                       </div>
                     </td>
-
                     <td className="px-6 py-5">
                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm ${
                         order.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
@@ -123,7 +129,6 @@ const AdminDashboard = () => {
                 </div>
                 <h2 className="text-xs font-black uppercase tracking-widest text-slate-100">Stock Alerts</h2>
               </div>
-              
               <div className="space-y-4">
                 {lowStockItems.length > 0 ? lowStockItems.map(item => (
                   <div key={item.id} className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
@@ -138,19 +143,57 @@ const AdminDashboard = () => {
                 )) : <p className="text-slate-500 text-xs italic text-center py-10">All items are in stock.</p>}
               </div>
            </div>
-
            <button 
              onClick={() => window.location.href='/admin/menu'}
              className="relative z-10 w-full mt-10 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all shadow-inner"
            >
              Manage Inventory <ArrowRight size={14}/>
            </button>
-           
-           {/* Decorative Design Element */}
            <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
         </div>
-
       </div>
+
+      {/* --- PROFILE MODAL POPUP --- */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl relative animate-in zoom-in duration-300">
+            <button 
+              onClick={() => setIsProfileOpen(false)} 
+              className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition-colors"
+            >
+               ✕
+            </button>
+            <div className="text-center">
+              <div className="w-24 h-24 bg-indigo-600 text-white rounded-[30px] flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-lg">
+                S
+              </div>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tighter">Sandhya</h2>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-8">Super Admin</p>
+              
+              <div className="bg-slate-50 rounded-3xl p-6 text-left space-y-4 mb-8">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</p>
+                  <p className="text-sm font-bold text-slate-700">sandhyakarki506@gmail.com</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                  <p className="text-sm font-bold text-emerald-500 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Verified Account
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setIsProfileOpen(false)}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl"
+              >
+                Close Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
