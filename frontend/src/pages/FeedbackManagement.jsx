@@ -4,13 +4,13 @@ import { Star, Quote, MessageSquare } from 'lucide-react';
 const FeedbackManagement = () => {
   const [feedbacks, setFeedbacks] = useState([]);
 
-  // --- FIXED NEPAL TIME LOGIC ---
+  // --- FINAL FIXED NEPAL TIME LOGIC ---
   const formatNepalTime = (f) => {
+    // 1. Get the raw date string from Django
     let rawDate = f.created_at || f.timestamp || f.formatted_date || f.date;
     if (!rawDate) return "Just now";
     
     try {
-      // 1. Convert string to standard ISO format
       let dateStr = String(rawDate).trim();
 
       if (!dateStr.includes('Z') && !dateStr.includes('+')) {
@@ -19,19 +19,19 @@ const FeedbackManagement = () => {
 
       const dateObj = new Date(dateStr);
       
-      // 3. If it's a valid date, apply the Nepal Offset (+5:45)
+      // 3. Apply the Kathmandu Timezone conversion
       if (!isNaN(dateObj.getTime())) {
         return new Intl.DateTimeFormat('en-US', {
           timeZone: 'Asia/Kathmandu',
           month: 'short',
           day: 'numeric',
-          hour: '2-digit',
+          hour: 'numeric', // Using 'numeric' removes leading zeros 
           minute: '2-digit',
           hour12: true
-        }).format(dateObj);
+        }).format(dateObj).toUpperCase(); 
       }
       
-      return rawDate; // Fallback if parsing fails
+      return rawDate; 
     } catch (e) {
       return rawDate; 
     }
@@ -41,7 +41,7 @@ const FeedbackManagement = () => {
     fetch("http://127.0.0.1:8000/api/feedback/")
       .then(res => res.json())
       .then(data => {
-        // SORTING: Newest ID First
+        //  Newest ID First so latest review is at top left
         const sortedData = data.sort((a, b) => b.id - a.id);
         setFeedbacks(sortedData);
       })
@@ -62,7 +62,7 @@ const FeedbackManagement = () => {
       {feedbacks.length === 0 ? (
         <div className="bg-white p-20 text-center rounded-[40px] border border-dashed text-slate-200">
            <MessageSquare size={48} className="mx-auto mb-4 opacity-20" />
-           <p className="font-black uppercase tracking-widest text-xs">No feedback received yet</p>
+           <p className="font-black uppercase tracking-widest text-xs text-left">No feedback received yet</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -96,7 +96,8 @@ const FeedbackManagement = () => {
                  
                  <div className="text-right">
                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Nepal Time (NST)</p>
-                    <span className="text-[11px] font-black text-indigo-500 uppercase tracking-tighter">
+                   
+                    <span className="text-[11px] font-black text-indigo-600 uppercase tracking-tighter">
                        {formatNepalTime(f)}
                     </span>
                  </div>
