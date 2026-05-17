@@ -14,6 +14,8 @@ const AdminSignup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const BASE_URL = "http://localhost:8000";
+
   const requestOTP = async (e) => {
     e.preventDefault();
     setError("");
@@ -30,13 +32,14 @@ const AdminSignup = () => {
 
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/signup/request-otp/", {
+      const res = await fetch(`${BASE_URL}/api/signup/request-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             username: formData.username,
             email: formData.email,
-            password: formData.password
+            password: formData.password,
+            role: "Admin" 
         }),
       });
 
@@ -50,18 +53,17 @@ const AdminSignup = () => {
       }
     } catch (err) {
       setLoading(false);
-      setError("Network error. Please check if your backend is running.");
+      setError("Connection Lost. Please ensure Django is running.");
     }
   };
 
-  
   const handleVerify = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/signup/verify/", {
+      const res = await fetch(`${BASE_URL}/api/signup/verify/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -74,27 +76,27 @@ const AdminSignup = () => {
       setLoading(false);
 
       if (res.ok) {
-        alert("Success! Account verified and created.");
+        alert("Success! Admin Account Created.");
         navigate("/admin/login");
       } else {
         setError(data.error || "Invalid OTP code. Please try again.");
       }
     } catch (err) {
       setLoading(false);
-      setError("Connection lost. Please try again.");
+      setError("Verification Failed. Check your connection.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] font-sans">
       <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md text-left border border-slate-50">
         <h2 className="text-2xl font-black mb-2 uppercase italic tracking-tighter text-slate-800 text-left">Admin Sign Up</h2>
         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-8 text-left">
-            {step === 1 ? "Create your professional account" : "Check your Gmail inbox"}
+            {step === 1 ? "Create your professional account" : `OTP sent to ${formData.email}`}
         </p>
 
         {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[11px] font-black uppercase mb-6 border border-red-100 text-center animate-pulse">
+            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[11px] font-black uppercase mb-6 border border-red-100 text-center">
                 {error}
             </div>
         )}
@@ -102,8 +104,8 @@ const AdminSignup = () => {
         {step === 1 ? (
           <form onSubmit={requestOTP} className="space-y-4">
             <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Choose Username</label>
-                <input type="text" required placeholder="e.g. sandhya_admin" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Username</label>
+                <input type="text" required placeholder="admin_name" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-sm focus:ring-2 focus:ring-blue-500" 
                        onChange={(e)=>setFormData({...formData, username: e.target.value})} />
             </div>
             <div>
@@ -124,28 +126,28 @@ const AdminSignup = () => {
                 </div>
             </div>
             <button disabled={loading} className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 active:scale-95 transition-all mt-4 disabled:opacity-50">
-              {loading ? "Processing..." : "Get Verification Code"}
+              {loading ? "Sending Code..." : "Get Verification Code"}
             </button>
           </form>
         ) : (
           <form onSubmit={handleVerify} className="text-center">
-            <div className="mb-8">
+            <div className="mb-8 text-center">
                 <input type="text" placeholder="000000" maxLength="6" className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[30px] text-center text-4xl font-black tracking-[0.3em] outline-none focus:ring-2 focus:ring-emerald-500" 
                        onChange={(e)=>setFormData({...formData, otp: e.target.value})} required/>
-                <p className="text-[10px] text-slate-400 font-bold mt-4">A 6-digit code was sent to <br/> <span className="text-blue-600 font-black">{formData.email}</span></p>
+                <p className="text-[10px] text-slate-400 font-bold mt-4">Check your Gmail Inbox</p>
             </div>
             <button disabled={loading} className="w-full bg-emerald-500 text-white py-5 rounded-[24px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-600 transition-all">
-                {loading ? "Verifying..." : "Verify & Create Account"}
+                {loading ? "Verifying..." : "Verify & Create Admin"}
             </button>
             <button type="button" onClick={() => setStep(1)} className="mt-6 text-[9px] font-black text-slate-300 uppercase tracking-widest hover:text-slate-500 transition-colors">
-                Mistake in details? Go back
+                Back to details
             </button>
           </form>
         )}
 
         <div className="mt-8 pt-6 border-t border-slate-50 text-center">
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
-                Already have an admin account? <Link to="/admin/login" className="text-blue-600 font-black ml-1 hover:underline">Login</Link>
+                Already an Admin? <Link to="/admin/login" className="text-blue-600 font-black ml-1 hover:underline">Login</Link>
             </p>
         </div>
       </div>
