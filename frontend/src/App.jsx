@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 
 // Auth Pages
 import AdminLogin from "./pages/AdminLogin.jsx";
+import AdminSignup from "./pages/AdminSignup.jsx";
 import StaffLogin from "./pages/StaffLogin.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
@@ -37,6 +38,7 @@ function App() {
 
         {/* ================= AUTH ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/signp" element={<AdminSignup/>} />
         <Route path="/staff/login" element={<StaffLogin />} />
         <Route path="/admin/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/reset-password" element={<ResetPassword />} />

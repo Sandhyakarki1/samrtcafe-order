@@ -7,7 +7,9 @@ from .views import (
     OrderListView, OrderDetailView, PlaceOrderView,
     FeedbackView, SettleBillView, BillDetailView,
     CheckTableStatusView,
-    EsewaVerifyView  
+    EsewaVerifyView,
+    request_signup_otp, 
+    verify_signup_otp
 )
 
 urlpatterns = [
@@ -16,6 +18,9 @@ urlpatterns = [
     # AUTHENTICATION & DASHBOARD
     # ==========================================
     path('admin/login/', AdminLoginView.as_view(), name='admin_login'),
+    path('signup/request-otp/', request_signup_otp, name='signup_request_otp'),
+    path('signup/verify/', verify_signup_otp, name='signup_verify_otp'),
+
     path('staff/login/', StaffLoginView.as_view(), name='staff_login'),
     path('admin/forgot-password/', admin_forgot_password),
     path('admin/reset-password/', admin_reset_password),
@@ -44,7 +49,6 @@ urlpatterns = [
     # ==========================================
     # PAYMENT VERIFICATION (eSewa)
     # ==========================================
- 
     path('esewa/verify/', EsewaVerifyView.as_view(), name='esewa_verify'),
 
     # ==========================================

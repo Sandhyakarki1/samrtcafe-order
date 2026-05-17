@@ -90,6 +90,68 @@ def admin_reset_password(request):
     return Response({"error": "Invalid OTP"}, status=400)
 
 # ==================================================
+#  ADMIN REGISTRATION & OTP VERIFICATION
+# ==================================================
+signup_temp_storage = {} 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_signup_otp(request):
+    username = request.data.get("username")
+    email = request.data.get("email", "").lower().strip()
+    password = request.data.get("password")
+
+    if not email.endswith("@gmail.com"):
+        return Response({"error": "Only valid @gmail.com accounts are allowed"}, status=400)
+
+    if User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists():
+        return Response({"error": "Username or Email already exists"}, status=400)
+
+    otp = str(random.randint(100000, 999999))
+    
+    signup_temp_storage[email] = {
+        "username": username,
+        "password": password,
+        "otp": otp,
+        "expires": timezone.now() + timezone.timedelta(minutes=10)
+    }
+
+    try:
+        send_mail(
+            "Smart-Cafe Signup Verification",
+            f"Your verification code is: {otp}",
+            settings.DEFAULT_FROM_EMAIL,
+            [email]
+        )
+        return Response({"message": "Verification code sent to Gmail"})
+    except Exception:
+        return Response({"error": "Email configuration error"}, status=500)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_signup_otp(request):
+    email = request.data.get("email", "").lower().strip()
+    otp = request.data.get("otp")
+    
+    temp_user = signup_temp_storage.get(email)
+    if not temp_user or temp_user['otp'] != str(otp):
+        return Response({"error": "Invalid or expired OTP"}, status=400)
+
+    user = User.objects.create_user(
+        username=temp_user['username'],
+        email=email,
+        password=temp_user['password']
+    )
+    user.is_staff = True 
+    user.save()
+
+    Profile.objects.create(user=user, role="Admin")
+
+    del signup_temp_storage[email]
+
+    return Response({"success": "Account created successfully. You can now login."})
+
+# ==================================================
 # 3. STAFF MANAGEMENT
 # ==================================================
 class StaffManagementView(APIView):
