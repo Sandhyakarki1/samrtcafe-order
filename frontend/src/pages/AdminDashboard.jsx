@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Utensils, ClipboardList, Clock, AlertTriangle, ArrowRight, CreditCard, Banknote, User } from 'lucide-react';
+import { Users, Utensils, ClipboardList, Clock, AlertTriangle, ArrowRight, CreditCard, Banknote } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ total_staff: 0, total_menu: 0, total_orders: 0, pending_orders: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]); 
-  
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -48,7 +46,6 @@ const AdminDashboard = () => {
         <StatCard icon={<Users className="text-blue-600"/>} label="Total Staff" value={stats.total_staff} />
         <StatCard icon={<Utensils className="text-emerald-500"/>} label="Menu Items" value={stats.total_menu} />
         <StatCard icon={<ClipboardList className="text-indigo-600"/>} label="Total Orders" value={stats.total_orders} />
-        {/* Fixed 4th Card Labels */}
         <StatCard icon={<Clock className="text-orange-500"/>} label="Pending Prep" value={stats.pending_orders} />
       </div>
 
@@ -58,16 +55,7 @@ const AdminDashboard = () => {
         {/* RECENT ACTIVITY TABLE */}
         <div className="lg:col-span-2 bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
           <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-               <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Live Order Stream</h2>
-               {/* --- ADDED THIS BUTTON TO TRIGGER PROFILE --- */}
-               <button 
-                 onClick={() => setIsProfileOpen(true)}
-                 className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black uppercase hover:bg-indigo-100 transition-all"
-               >
-                 View My Profile
-               </button>
-            </div>
+            <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Live Order Stream</h2>
             <span className="text-[10px] font-bold text-slate-400">Auto-refreshing...</span>
           </div>
           <div className="p-4 overflow-x-auto">
@@ -152,48 +140,6 @@ const AdminDashboard = () => {
            <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
         </div>
       </div>
-
-      {/* --- PROFILE MODAL POPUP --- */}
-      {isProfileOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[40px] p-10 w-full max-w-sm shadow-2xl relative animate-in zoom-in duration-300">
-            <button 
-              onClick={() => setIsProfileOpen(false)} 
-              className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition-colors"
-            >
-               ✕
-            </button>
-            <div className="text-center">
-              <div className="w-24 h-24 bg-indigo-600 text-white rounded-[30px] flex items-center justify-center text-3xl font-black mx-auto mb-6 shadow-lg">
-                S
-              </div>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tighter">Sandhya</h2>
-              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-8">Super Admin</p>
-              
-              <div className="bg-slate-50 rounded-3xl p-6 text-left space-y-4 mb-8">
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</p>
-                  <p className="text-sm font-bold text-slate-700">sandhyakarki506@gmail.com</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                  <p className="text-sm font-bold text-emerald-500 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Verified Account
-                  </p>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setIsProfileOpen(false)}
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl"
-              >
-                Close Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };
