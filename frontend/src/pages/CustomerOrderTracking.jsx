@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Clock, ChefHat, Bell, Star, CheckCircle, MessageSquare } from "lucide-react";
 
-const BASE_URL = "https://reviews-handles-str-outreach.trycloudflare.com";
+const BASE_URL = "https://proved-innovative-spirits-anthony.trycloudflare.com";
 
 export default function CustomerOrderTracking() {
   const { id } = useParams();
