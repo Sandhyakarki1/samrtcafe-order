@@ -4,7 +4,7 @@ import {
   Utensils, Banknote, ChefHat, Play, Check, CreditCard
 } from 'lucide-react';
 
-const BASE_URL = "https://notifications-communist-needed-europe.trycloudflare.com";
+const BASE_URL = "https://priest-signing-clearly-pad.trycloudflare.com";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);

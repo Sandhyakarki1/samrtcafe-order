@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom"; 
 import { Search, ShoppingBag, Plus, Minus, Utensils, Pizza, Coffee, Loader2 } from "lucide-react";
 
-const BASE_URL = "https://notifications-communist-needed-europe.trycloudflare.com";
+const BASE_URL = "https://priest-signing-clearly-pad.trycloudflare.com";
 
 export default function CustomerMenu() {
   const [menu, setMenu] = useState([]);
