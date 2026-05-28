@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import { ShoppingBag, ArrowLeft, Trash2, CreditCard, ShieldCheck, Banknote, Loader2, MessageSquare } from "lucide-react";
 
-const BASE_URL = "https://seller-amazing-stunning-primarily.trycloudflare.com";
+const BASE_URL = "https://notifications-communist-needed-europe.trycloudflare.com";
 
 export default function CustomerCart() {
   const navigate = useNavigate();
