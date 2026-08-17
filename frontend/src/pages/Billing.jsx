@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Printer, Search, CreditCard, Banknote, CheckCircle, Clock, Activity, History as HistoryIcon } from 'lucide-react';
 
 
-const BASE_URL = "https://amy-decorating-beliefs-pill.trycloudflare.com";
+const BASE_URL = "https://buffalo-unix-salad-bytes.trycloudflare.com";
 
 const Billing = () => {
   const [orders, setOrders] = useState([]);

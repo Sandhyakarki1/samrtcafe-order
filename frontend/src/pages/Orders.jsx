@@ -4,7 +4,7 @@ import {
   Utensils, Banknote, ChefHat, Play, Check, CreditCard
 } from 'lucide-react';
 
-const BASE_URL = "https://amy-decorating-beliefs-pill.trycloudflare.com";
+const BASE_URL = "https://buffalo-unix-salad-bytes.trycloudflare.com";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
